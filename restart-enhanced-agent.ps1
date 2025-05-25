@@ -135,6 +135,14 @@ try {
                         Get-Content $latestLog.FullName -Tail 5 | ForEach-Object {
                             Write-Host "   $_" -ForegroundColor Gray
                         }
+                        # Check for analytics output (risk, anomaly, trend)
+                        $analyticsLines = Get-Content $latestLog.FullName | Select-String -Pattern "Risk Score|Anomaly|Trend|Advanced Analytics"
+                        if ($analyticsLines) {
+                            Write-Host "📈 Advanced Analytics Detected:" -ForegroundColor Cyan
+                            $analyticsLines | ForEach-Object { Write-Host "   $_" -ForegroundColor Green }
+                        } else {
+                            Write-Host "⚠️  No advanced analytics output found in recent logs." -ForegroundColor Yellow
+                        }
                     }
                 }
                 

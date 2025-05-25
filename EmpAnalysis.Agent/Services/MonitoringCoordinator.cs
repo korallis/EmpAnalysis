@@ -5,6 +5,10 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Runtime.InteropServices;
 using System.Text;
+using EmpAnalysis.Agent.Services; // Add this for AdvancedAnalyticsService
+using SharedAppUsage = EmpAnalysis.Shared.Models.ApplicationUsage;
+using SharedWebsiteVisit = EmpAnalysis.Shared.Models.WebsiteVisit;
+using SharedSystemEvent = EmpAnalysis.Agent.Models.SystemEvent;
 
 namespace EmpAnalysis.Agent.Services;
 
@@ -15,6 +19,8 @@ public class MonitoringCoordinator : BackgroundService
     private readonly IActivityMonitoringService _activityService;
     private readonly IScreenshotService _screenshotService;
     private readonly IApiCommunicationService _apiService;
+
+    private readonly AdvancedAnalyticsService _analyticsService = new();
 
     private readonly List<ApplicationUsage> _pendingApplications = new();
     private readonly List<WebsiteVisit> _pendingWebsites = new();
@@ -290,8 +296,9 @@ public class MonitoringCoordinator : BackgroundService
                 await Task.Delay(100);
             }
 
-            _logger.LogInformation($"Data synchronization completed. Remaining pending: " +
-                                 $"{_pendingApplications.Count + _pendingWebsites.Count + _pendingSystemEvents.Count + _pendingScreenshots.Count} items");
+            // Log advanced analytics after data sync
+            var (riskScore, anomalies, trends) = GetAdvancedAnalytics();
+            _logger.LogInformation($"Advanced Analytics | Risk Score: {riskScore:F2} | Anomalies: {string.Join(", ", anomalies)} | Trends: {string.Join(", ", trends.Select(t => $"{t.Period:yyyy-MM-dd}:{t.ProductivityScore:F1}%"))}");
         }
         catch (Exception ex)
         {
@@ -332,6 +339,10 @@ public class MonitoringCoordinator : BackgroundService
                                      $"Score: {stats.ProductivityScore:F1}%, " +
                                      $"Apps: {stats.ApplicationSwitches}, " +
                                      $"Websites: {stats.WebsiteVisits}");
+
+                // New: Compute and log advanced analytics
+                var (riskScore, anomalies, trends) = GetAdvancedAnalytics();
+                _logger.LogInformation($"Analytics - Risk Score: {riskScore:F2}, Anomalies: {anomalies.Count}, Trends: {trends.Count}");
 
                 await Task.Delay(TimeSpan.FromMinutes(15), cancellationToken);
             }
@@ -612,5 +623,51 @@ public class MonitoringCoordinator : BackgroundService
             _logger.LogError(ex, "Error getting active window info");
             return (string.Empty, string.Empty);
         }
+    }
+
+    // Example: Expose analytics results for use in data sync or health monitoring
+    private (double riskScore, List<string> anomalies, List<(DateTime, double)> trends) GetAdvancedAnalytics()
+    {
+        var allApps = ConvertAppUsages(_pendingApplications);
+        var allWebs = ConvertWebsiteVisits(_pendingWebsites);
+        var allEvents = ConvertSystemEvents(_pendingSystemEvents);
+        double risk = _analyticsService.CalculateRiskScore(allApps, allWebs, allEvents);
+        var anomalies = _analyticsService.DetectAnomalies(allApps, allWebs, allEvents);
+        var trends = _analyticsService.AnalyzeTrends(allApps, TimeSpan.FromDays(1));
+        return (risk, anomalies, trends);
+    }
+
+    private List<SharedAppUsage> ConvertAppUsages(List<EmpAnalysis.Agent.Models.ApplicationUsage> agentApps)
+    {
+        return agentApps.Select(a => new SharedAppUsage
+        {
+            ApplicationName = a.ApplicationName,
+            ExecutablePath = a.ApplicationPath,
+            WindowTitle = a.WindowTitle,
+            StartTime = a.StartTime,
+            EndTime = a.EndTime,
+            Duration = a.EndTime > a.StartTime ? a.EndTime - a.StartTime : TimeSpan.Zero,
+            IsProductiveApplication = a.IsProductiveApp,
+            Category = a.Category
+        }).ToList();
+    }
+    private List<SharedWebsiteVisit> ConvertWebsiteVisits(List<EmpAnalysis.Agent.Models.WebsiteVisit> agentWebs)
+    {
+        return agentWebs.Select(w => new SharedWebsiteVisit
+        {
+            Url = w.Url,
+            Title = w.Title,
+            Domain = w.Domain,
+            VisitStart = w.StartTime,
+            VisitEnd = w.EndTime,
+            Duration = w.EndTime > w.StartTime ? w.EndTime - w.StartTime : TimeSpan.Zero,
+            IsProductiveTime = w.IsProductiveSite,
+            Category = w.Category
+        }).ToList();
+    }
+    private List<SystemEvent> ConvertSystemEvents(List<EmpAnalysis.Agent.Models.SystemEvent> agentEvents)
+    {
+        // SystemEvent is the same in Agent and AdvancedAnalyticsService context, so just return as-is
+        return agentEvents;
     }
 }
