@@ -1,0 +1,40 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EmpAnalysis.Shared", "EmpAnalysis.Shared\EmpAnalysis.Shared.csproj", "{410AB097-1343-4DAB-B559-6F05FF517A12}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EmpAnalysis.Api", "EmpAnalysis.Api\EmpAnalysis.Api.csproj", "{2D0B50F6-6664-496C-A5E2-BCB45C6EDEDF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EmpAnalysis.Web", "EmpAnalysis.Web\EmpAnalysis.Web.csproj", "{72FF850D-BB37-49C0-BBEA-06C9500A5B2F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EmpAnalysis.Agent", "EmpAnalysis.Agent\EmpAnalysis.Agent.csproj", "{14F393D8-B2E4-4FF4-98B5-6A2050FFFB21}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{410AB097-1343-4DAB-B559-6F05FF517A12}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{410AB097-1343-4DAB-B559-6F05FF517A12}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{410AB097-1343-4DAB-B559-6F05FF517A12}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{410AB097-1343-4DAB-B559-6F05FF517A12}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2D0B50F6-6664-496C-A5E2-BCB45C6EDEDF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2D0B50F6-6664-496C-A5E2-BCB45C6EDEDF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2D0B50F6-6664-496C-A5E2-BCB45C6EDEDF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2D0B50F6-6664-496C-A5E2-BCB45C6EDEDF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{72FF850D-BB37-49C0-BBEA-06C9500A5B2F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{72FF850D-BB37-49C0-BBEA-06C9500A5B2F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{72FF850D-BB37-49C0-BBEA-06C9500A5B2F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{72FF850D-BB37-49C0-BBEA-06C9500A5B2F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{14F393D8-B2E4-4FF4-98B5-6A2050FFFB21}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{14F393D8-B2E4-4FF4-98B5-6A2050FFFB21}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{14F393D8-B2E4-4FF4-98B5-6A2050FFFB21}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{14F393D8-B2E4-4FF4-98B5-6A2050FFFB21}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

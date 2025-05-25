@@ -1,0 +1,472 @@
+/* Marva Brand Design System CSS Variables and Components */
+
+/* ===================================
+   MARVA BRAND DESIGN SYSTEM
+   ===================================
+   
+   This file contains the official Marva brand guidelines
+   including colors, typography, spacing, and design tokens.
+   
+   Based on professional brand standards and design systems.
+   ================================== */
+
+:root {
+    /* === MARVA BRAND COLORS === */
+    
+    /* Primary Brand Colors */
+    --marva-primary: #2563EB;           /* Marva Blue - Primary brand color */
+    --marva-primary-dark: #1D4ED8;      /* Darker blue for hover states */
+    --marva-primary-light: #3B82F6;     /* Lighter blue for backgrounds */
+    --marva-primary-50: #EFF6FF;        /* Very light blue for subtle backgrounds */
+    --marva-primary-100: #DBEAFE;       /* Light blue for hover states */
+    --marva-primary-200: #BFDBFE;       /* Medium light blue */
+    
+    /* Secondary Brand Colors */
+    --marva-secondary: #7C3AED;         /* Purple accent color */
+    --marva-secondary-dark: #6D28D9;    /* Darker purple */
+    --marva-secondary-light: #8B5CF6;   /* Lighter purple */
+    
+    /* Success & Status Colors */
+    --marva-success: #059669;           /* Success green */
+    --marva-success-light: #10B981;     /* Light success green */
+    --marva-warning: #D97706;           /* Warning orange */
+    --marva-warning-light: #F59E0B;     /* Light warning orange */
+    --marva-error: #DC2626;             /* Error red */
+    --marva-error-light: #EF4444;       /* Light error red */
+    --marva-info: #0891B2;              /* Info cyan */
+    --marva-info-light: #06B6D4;        /* Light info cyan */
+    
+    /* Neutral Colors */
+    --marva-gray-900: #111827;          /* Darkest gray */
+    --marva-gray-800: #1F2937;          /* Very dark gray */
+    --marva-gray-700: #374151;          /* Dark gray */
+    --marva-gray-600: #4B5563;          /* Medium dark gray */
+    --marva-gray-500: #6B7280;          /* Medium gray */
+    --marva-gray-400: #9CA3AF;          /* Light medium gray */
+    --marva-gray-300: #D1D5DB;          /* Light gray */
+    --marva-gray-200: #E5E7EB;          /* Very light gray */
+    --marva-gray-100: #F3F4F6;          /* Lightest gray */
+    --marva-gray-50: #F9FAFB;           /* Off white */
+    
+    /* White & Black */
+    --marva-white: #FFFFFF;
+    --marva-black: #000000;
+    
+    /* === MARVA TYPOGRAPHY === */
+    
+    /* Primary Font Family - Modern, professional sans-serif */
+    --marva-font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    
+    /* Secondary Font Family - For headings and emphasis */
+    --marva-font-secondary: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    
+    /* Monospace Font - For code and data */
+    --marva-font-mono: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+    
+    /* Font Weights */
+    --marva-font-weight-normal: 400;
+    --marva-font-weight-medium: 500;
+    --marva-font-weight-semibold: 600;
+    --marva-font-weight-bold: 700;
+    --marva-font-weight-extrabold: 800;
+    
+    /* Font Sizes */
+    --marva-text-xs: 0.75rem;          /* 12px */
+    --marva-text-sm: 0.875rem;         /* 14px */
+    --marva-text-base: 1rem;           /* 16px */
+    --marva-text-lg: 1.125rem;         /* 18px */
+    --marva-text-xl: 1.25rem;          /* 20px */
+    --marva-text-2xl: 1.5rem;          /* 24px */
+    --marva-text-3xl: 1.875rem;        /* 30px */
+    --marva-text-4xl: 2.25rem;         /* 36px */
+    --marva-text-5xl: 3rem;            /* 48px */
+    
+    /* Line Heights */
+    --marva-leading-tight: 1.25;
+    --marva-leading-normal: 1.5;
+    --marva-leading-relaxed: 1.625;
+    
+    /* === MARVA SPACING SYSTEM === */
+    
+    --marva-space-1: 0.25rem;          /* 4px */
+    --marva-space-2: 0.5rem;           /* 8px */
+    --marva-space-3: 0.75rem;          /* 12px */
+    --marva-space-4: 1rem;             /* 16px */
+    --marva-space-5: 1.25rem;          /* 20px */
+    --marva-space-6: 1.5rem;           /* 24px */
+    --marva-space-8: 2rem;             /* 32px */
+    --marva-space-10: 2.5rem;          /* 40px */
+    --marva-space-12: 3rem;            /* 48px */
+    --marva-space-16: 4rem;            /* 64px */
+    
+    /* === MARVA BORDER RADIUS === */
+    
+    --marva-radius-sm: 0.375rem;       /* 6px */
+    --marva-radius-md: 0.5rem;         /* 8px */
+    --marva-radius-lg: 0.75rem;        /* 12px */
+    --marva-radius-xl: 1rem;           /* 16px */
+    --marva-radius-2xl: 1.5rem;        /* 24px */
+    --marva-radius-full: 9999px;       /* Fully rounded */
+    
+    /* === MARVA SHADOWS === */
+    
+    --marva-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --marva-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --marva-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --marva-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    --marva-shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    
+    /* === MARVA BRAND GRADIENTS === */
+    
+    --marva-gradient-primary: linear-gradient(135deg, var(--marva-primary) 0%, var(--marva-secondary) 100%);
+    --marva-gradient-success: linear-gradient(135deg, var(--marva-success) 0%, var(--marva-success-light) 100%);
+    --marva-gradient-warning: linear-gradient(135deg, var(--marva-warning) 0%, var(--marva-warning-light) 100%);
+    --marva-gradient-error: linear-gradient(135deg, var(--marva-error) 0%, var(--marva-error-light) 100%);
+    --marva-gradient-surface: linear-gradient(135deg, var(--marva-gray-50) 0%, var(--marva-gray-100) 100%);
+    
+    /* === MARVA TRANSITIONS === */
+    
+    --marva-transition-fast: 0.15s ease-in-out;
+    --marva-transition-normal: 0.3s ease-in-out;
+    --marva-transition-slow: 0.5s ease-in-out;
+    
+    /* === MARVA Z-INDEX SYSTEM === */
+    
+    --marva-z-dropdown: 1000;
+    --marva-z-sticky: 1020;
+    --marva-z-fixed: 1030;
+    --marva-z-modal-backdrop: 1040;
+    --marva-z-modal: 1050;
+    --marva-z-popover: 1060;
+    --marva-z-tooltip: 1070;
+    --marva-z-toast: 1080;
+}
+
+/* === MARVA COMPONENT CLASSES === */
+
+/* Brand Gradients */
+.marva-gradient-primary {
+    background: var(--marva-gradient-primary);
+}
+
+.marva-gradient-success {
+    background: var(--marva-gradient-success);
+}
+
+.marva-gradient-warning {
+    background: var(--marva-gradient-warning);
+}
+
+.marva-gradient-error {
+    background: var(--marva-gradient-error);
+}
+
+.marva-gradient-surface {
+    background: var(--marva-gradient-surface);
+}
+
+/* Typography Classes */
+.marva-font-primary {
+    font-family: var(--marva-font-primary);
+}
+
+.marva-font-secondary {
+    font-family: var(--marva-font-secondary);
+}
+
+.marva-font-mono {
+    font-family: var(--marva-font-mono);
+}
+
+/* Brand Colors */
+.marva-text-primary {
+    color: var(--marva-primary);
+}
+
+.marva-text-secondary {
+    color: var(--marva-secondary);
+}
+
+.marva-bg-primary {
+    background-color: var(--marva-primary);
+}
+
+.marva-bg-secondary {
+    background-color: var(--marva-secondary);
+}
+
+/* Status Colors */
+.marva-text-success {
+    color: var(--marva-success);
+}
+
+.marva-text-warning {
+    color: var(--marva-warning);
+}
+
+.marva-text-error {
+    color: var(--marva-error);
+}
+
+.marva-text-info {
+    color: var(--marva-info);
+}
+
+/* Shadow Classes */
+.marva-shadow-sm {
+    box-shadow: var(--marva-shadow-sm);
+}
+
+.marva-shadow-md {
+    box-shadow: var(--marva-shadow-md);
+}
+
+.marva-shadow-lg {
+    box-shadow: var(--marva-shadow-lg);
+}
+
+.marva-shadow-xl {
+    box-shadow: var(--marva-shadow-xl);
+}
+
+/* Border Radius Classes */
+.marva-radius-sm {
+    border-radius: var(--marva-radius-sm);
+}
+
+.marva-radius-md {
+    border-radius: var(--marva-radius-md);
+}
+
+.marva-radius-lg {
+    border-radius: var(--marva-radius-lg);
+}
+
+.marva-radius-xl {
+    border-radius: var(--marva-radius-xl);
+}
+
+/* === MARVA BUTTON SYSTEM === */
+
+.marva-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--marva-font-primary);
+    font-weight: var(--marva-font-weight-medium);
+    transition: all var(--marva-transition-normal);
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    gap: var(--marva-space-2);
+}
+
+.marva-btn-primary {
+    background: var(--marva-gradient-primary);
+    color: var(--marva-white);
+    box-shadow: var(--marva-shadow-md);
+}
+
+.marva-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--marva-shadow-lg);
+}
+
+.marva-btn-secondary {
+    background: var(--marva-white);
+    color: var(--marva-primary);
+    border: 2px solid var(--marva-primary);
+}
+
+.marva-btn-secondary:hover {
+    background: var(--marva-primary);
+    color: var(--marva-white);
+}
+
+/* === MARVA CARD SYSTEM === */
+
+.marva-card {
+    background: var(--marva-white);
+    border-radius: var(--marva-radius-xl);
+    box-shadow: var(--marva-shadow-md);
+    padding: var(--marva-space-6);
+    transition: all var(--marva-transition-normal);
+    border: 1px solid var(--marva-gray-200);
+}
+
+.marva-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--marva-shadow-xl);
+}
+
+.marva-card-header {
+    border-bottom: 1px solid var(--marva-gray-200);
+    padding-bottom: var(--marva-space-4);
+    margin-bottom: var(--marva-space-4);
+}
+
+.marva-card-title {
+    font-family: var(--marva-font-secondary);
+    font-size: var(--marva-text-lg);
+    font-weight: var(--marva-font-weight-semibold);
+    color: var(--marva-gray-900);
+    margin: 0;
+}
+
+/* === MARVA DASHBOARD SPECIFIC COMPONENTS === */
+
+.marva-dashboard-container {
+    background: var(--marva-gradient-surface);
+    min-height: 100vh;
+    font-family: var(--marva-font-primary);
+    color: var(--marva-gray-800);
+}
+
+.marva-topbar {
+    background: var(--marva-gradient-primary);
+    color: var(--marva-white);
+    padding: var(--marva-space-4) var(--marva-space-8);
+    box-shadow: var(--marva-shadow-lg);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.marva-metric-card {
+    background: var(--marva-white);
+    border-radius: var(--marva-radius-xl);
+    padding: var(--marva-space-6);
+    box-shadow: var(--marva-shadow-md);
+    border: 1px solid var(--marva-gray-200);
+    transition: all var(--marva-transition-normal);
+    position: relative;
+    overflow: hidden;
+}
+
+.marva-metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--marva-gradient-primary);
+}
+
+.marva-metric-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--marva-shadow-xl);
+}
+
+.marva-panel {
+    background: var(--marva-white);
+    border-radius: var(--marva-radius-xl);
+    box-shadow: var(--marva-shadow-md);
+    border: 1px solid var(--marva-gray-200);
+    overflow: hidden;
+    transition: all var(--marva-transition-normal);
+}
+
+.marva-panel:hover {
+    box-shadow: var(--marva-shadow-lg);
+}
+
+.marva-panel-header {
+    background: var(--marva-gradient-surface);
+    padding: var(--marva-space-4) var(--marva-space-6);
+    border-bottom: 1px solid var(--marva-gray-200);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.marva-panel-title {
+    font-family: var(--marva-font-secondary);
+    font-size: var(--marva-text-lg);
+    font-weight: var(--marva-font-weight-semibold);
+    color: var(--marva-gray-900);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--marva-space-2);
+}
+
+.marva-panel-content {
+    padding: var(--marva-space-6);
+}
+
+/* === MARVA RESPONSIVE BREAKPOINTS === */
+
+@media (max-width: 768px) {
+    .marva-topbar {
+        padding: var(--marva-space-4);
+    }
+    
+    .marva-metric-card,
+    .marva-panel {
+        margin-bottom: var(--marva-space-4);
+    }
+}
+
+/* === MARVA ACCESSIBILITY === */
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --marva-gray-900: #F9FAFB;
+        --marva-gray-800: #F3F4F6;
+        --marva-gray-700: #E5E7EB;
+        --marva-gray-600: #D1D5DB;
+        --marva-gray-500: #9CA3AF;
+        --marva-gray-400: #6B7280;
+        --marva-gray-300: #4B5563;
+        --marva-gray-200: #374151;
+        --marva-gray-100: #1F2937;
+        --marva-gray-50: #111827;
+        --marva-white: #111827;
+    }
+}
+
+/* === MARVA BRAND LOGO POSITIONING === */
+
+.marva-brand-logo {
+    display: flex;
+    align-items: center;
+    gap: var(--marva-space-3);
+    font-family: var(--marva-font-secondary);
+    font-weight: var(--marva-font-weight-bold);
+    color: var(--marva-white);
+}
+
+.marva-brand-icon {
+    width: 32px;
+    height: 32px;
+    background: var(--marva-white);
+    color: var(--marva-primary);
+    border-radius: var(--marva-radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--marva-text-lg);
+}
+
+.marva-brand-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.marva-brand-name {
+    font-size: var(--marva-text-xl);
+    line-height: var(--marva-leading-tight);
+}
+
+.marva-brand-subtitle {
+    font-size: var(--marva-text-sm);
+    opacity: 0.9;
+    font-weight: var(--marva-font-weight-normal);
+} 

@@ -1,0 +1,606 @@
+@page "/"
+@page "/dashboard"
+@using EmpAnalysis.Web.Services
+@using EmpAnalysis.Shared.Models
+@inject DashboardService DashboardService
+@inject SignalRService SignalRService
+@inject IJSRuntime JSRuntime
+@implements IAsyncDisposable
+
+<PageTitle>EmpAnalysis Dashboard - Real-time Monitoring</PageTitle>
+
+<!-- Real-time Connection Status -->
+<div class="connection-status @(SignalRService.IsConnected ? "connected" : "disconnected")">
+    <i class="fas @(SignalRService.IsConnected ? "fa-wifi" : "fa-wifi-3")"></i>
+    <span>@(SignalRService.IsConnected ? "Live Data Connected" : "Connecting...")</span>
+</div>
+
+<div class="teramind-dashboard">
+    <!-- Enhanced Top Navigation Bar -->
+    <div class="dashboard-topbar">
+        <div class="topbar-left">
+            <div class="breadcrumb">
+                <i class="fas fa-chart-line"></i>
+                <span>Dashboard</span>
+                <span class="separator">/</span>
+                <span class="current">Overview</span>
+            </div>
+        </div>
+        <div class="topbar-right">
+            <div class="topbar-actions">
+                <button class="btn-icon marva-btn-secondary">
+                    <i class="fas fa-download"></i>
+                    Export
+                </button>
+                <button class="btn-icon marva-btn-secondary">
+                    <i class="fas fa-cog"></i>
+                    Settings
+                </button>
+                <div class="user-profile">
+                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTYiIGZpbGw9IiM0RjQ2RTUiLz4KPHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4PSI2IiB5PSI2Ij4KPHBhdGggZD0iTTEwIDEwQzEyLjIwOTEgMTAgMTQgOC4yMDkxNCAxNCA2QzE0IDMuNzkwODYgMTIuMjA5MSAyIDEwIDJDNy43OTA4NiAyIDYgMy43OTA4NiA2IDZDNiA4LjIwOTE0IDcuNzkwODYgMTAgMTBaIiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNMTAgMTJDNi42ODYyOSAxMiA0IDE0LjY4NjMgNCAxOFYyMEgxNlYxOEMxNiAxNC42ODYzIDEzLjMxMzcgMTIgMTAgMTJaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4KPC9zdmc+" alt="Admin" class="avatar">
+                    <span>Admin</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Metrics Grid -->
+    <div class="metrics-container">
+        <div class="metrics-grid">
+            <div class="metric-card marva-card-primary @(_dashboardData?.TotalEmployees > (_previousData?.TotalEmployees ?? 0) ? "trend-up" : "")">
+                <div class="metric-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="metric-content">
+                    <h3>@_dashboardData?.TotalEmployees</h3>
+                    <p>Active Employees</p>
+                    <div class="metric-trend trend-up">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>+2.5% from last week</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="metric-card marva-card-success @((_dashboardData?.TotalProductiveHours ?? 0) > (_previousData?.TotalProductiveHours ?? 0) ? "trend-up" : "")">
+                <div class="metric-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="metric-content">
+                    <h3>@((_dashboardData?.TotalProductiveHours ?? 0).ToString("F1"))h</h3>
+                    <p>Productive Hours</p>
+                    <div class="metric-trend trend-up">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>+8.1% today</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="metric-card marva-card-info @((_dashboardData?.TotalScreenshots ?? 0) > (_previousData?.TotalScreenshots ?? 0) ? "trend-up" : "")">
+                <div class="metric-icon">
+                    <i class="fas fa-camera"></i>
+                </div>
+                <div class="metric-content">
+                    <h3>@(_dashboardData?.TotalScreenshots ?? 0)</h3>
+                    <p>Screenshots</p>
+                    <div class="metric-trend trend-neutral">
+                        <i class="fas fa-minus"></i>
+                        <span>No change</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="metric-card marva-card-warning @((_dashboardData?.SecurityAlerts ?? 0) < (_previousData?.SecurityAlerts ?? 0) ? "trend-down" : "")">
+                <div class="metric-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <div class="metric-content">
+                    <h3>@(_dashboardData?.SecurityAlerts ?? 0)</h3>
+                    <p>Risk Alerts</p>
+                    <div class="metric-trend trend-down">
+                        <i class="fas fa-arrow-down"></i>
+                        <span>-15.3% this week</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="metric-card marva-card-accent @((_dashboardData?.ProductivityScore ?? 0) > (_previousData?.ProductivityScore ?? 0) ? "trend-up" : "")">
+                <div class="metric-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="metric-content">
+                    <h3>@((_dashboardData?.ProductivityScore ?? 0).ToString("F0"))%</h3>
+                    <p>Productivity Score</p>
+                    <div class="metric-trend trend-up">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>+5.2% this month</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="metric-card marva-card-secondary @((_dashboardData?.NetworkEvents ?? 0) > (_previousData?.NetworkEvents ?? 0) ? "trend-up" : "")">
+                <div class="metric-icon">
+                    <i class="fas fa-network-wired"></i>
+                </div>
+                <div class="metric-content">
+                    <h3>@(_dashboardData?.NetworkEvents ?? 0)</h3>
+                    <p>Network Events</p>
+                    <div class="metric-trend trend-up">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>+12.7% today</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Content Grid with Charts -->
+    <div class="dashboard-content">
+        <div class="content-grid">
+            <!-- Productivity Analytics Chart -->
+            <div class="content-section marva-card-elevated">
+                <div class="section-header">
+                    <h3><i class="fas fa-chart-area"></i> Productivity Analytics</h3>
+                    <div class="section-controls">
+                        <select class="marva-select">
+                            <option>Last 7 days</option>
+                            <option>Last 30 days</option>
+                            <option>Last 90 days</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="productivityChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+
+            <!-- Employee Status Overview -->
+            <div class="content-section marva-card-elevated">
+                <div class="section-header">
+                    <h3><i class="fas fa-users-cog"></i> Employee Status</h3>
+                    <span class="status-timestamp">Updated 2 minutes ago</span>
+                </div>
+                <div class="status-grid">
+                    <div class="status-item online">
+                        <div class="status-indicator"></div>
+                        <div class="status-info">
+                            <span class="status-count">@(_dashboardData?.OnlineEmployees ?? 0)</span>
+                            <span class="status-label">Online</span>
+                        </div>
+                    </div>
+                    <div class="status-item idle">
+                        <div class="status-indicator"></div>
+                        <div class="status-info">
+                            <span class="status-count">@(_dashboardData?.IdleEmployees ?? 0)</span>
+                            <span class="status-label">Idle</span>
+                        </div>
+                    </div>
+                    <div class="status-item offline">
+                        <div class="status-indicator"></div>
+                        <div class="status-info">
+                            <span class="status-count">@(_dashboardData?.OfflineEmployees ?? 0)</span>
+                            <span class="status-label">Offline</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="statusChart" width="300" height="300"></canvas>
+                </div>
+            </div>
+
+            <!-- Real-time Activity Feed -->
+            <div class="content-section marva-card-elevated">
+                <div class="section-header">
+                    <h3><i class="fas fa-stream"></i> Real-time Activity</h3>
+                    <div class="activity-controls">
+                        <button class="btn-icon marva-btn-ghost">
+                            <i class="fas fa-pause"></i>
+                        </button>
+                        <button class="btn-icon marva-btn-ghost">
+                            <i class="fas fa-filter"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="activity-feed">
+                    @if (_dashboardData?.RecentActivities != null)
+                    {
+                        @foreach (var activity in _dashboardData.RecentActivities)
+                        {
+                            <div class="activity-item @GetActivityClass(activity.ActivityType)">
+                                <div class="activity-icon">
+                                    <i class="@GetActivityIcon(activity.ActivityType)"></i>
+                                </div>
+                                <div class="activity-content">
+                                    <div class="activity-text">
+                                        <strong>@activity.EmployeeName</strong> @activity.Description
+                                    </div>
+                                    <div class="activity-time">@activity.Timestamp.ToString("HH:mm")</div>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+
+            <!-- Application Usage Chart -->
+            <div class="content-section marva-card-elevated">
+                <div class="section-header">
+                    <h3><i class="fas fa-desktop"></i> Top Applications</h3>
+                    <div class="section-controls">
+                        <button class="marva-btn-ghost">View All</button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="applicationsChart" width="400" height="300"></canvas>
+                </div>
+            </div>
+
+            <!-- System Health Monitor -->
+            <div class="content-section marva-card-elevated">
+                <div class="section-header">
+                    <h3><i class="fas fa-heartbeat"></i> System Health</h3>
+                    <div class="health-indicator healthy">
+                        <i class="fas fa-check-circle"></i>
+                        <span>All Systems Operational</span>
+                    </div>
+                </div>
+                <div class="health-metrics">
+                    <div class="health-item">
+                        <div class="health-label">Database</div>
+                        <div class="health-bar">
+                            <div class="health-progress" style="width: 98%"></div>
+                        </div>
+                        <div class="health-value">98%</div>
+                    </div>
+                    <div class="health-item">
+                        <div class="health-label">API Response</div>
+                        <div class="health-bar">
+                            <div class="health-progress" style="width: 95%"></div>
+                        </div>
+                        <div class="health-value">95%</div>
+                    </div>
+                    <div class="health-item">
+                        <div class="health-label">Storage</div>
+                        <div class="health-bar">
+                            <div class="health-progress" style="width: 78%"></div>
+                        </div>
+                        <div class="health-value">78%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Security Alerts -->
+            <div class="content-section marva-card-elevated">
+                <div class="section-header">
+                    <h3><i class="fas fa-exclamation-triangle"></i> Recent Alerts</h3>
+                    <span class="alert-count">@(_dashboardData?.SecurityAlerts ?? 0) active</span>
+                </div>
+                <div class="alerts-list">
+                    @if (_dashboardData?.RecentAlerts != null)
+                    {
+                        @foreach (var alert in _dashboardData.RecentAlerts)
+                        {
+                            <div class="alert-item @GetAlertSeverity(alert.ActivityType)">
+                                <div class="alert-icon">
+                                    <i class="@GetAlertIcon(alert.ActivityType)"></i>
+                                </div>
+                                <div class="alert-content">
+                                    <div class="alert-text">@alert.Description</div>
+                                    <div class="alert-meta">
+                                        <span class="alert-employee">@alert.EmployeeName</span>
+                                        <span class="alert-time">@alert.Timestamp.ToString("HH:mm")</span>
+                                    </div>
+                                </div>
+                                <div class="alert-actions">
+                                    <button class="btn-icon marva-btn-ghost">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private DashboardData? _dashboardData;
+    private DashboardData? _previousData;
+    private Timer? _refreshTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _dashboardData = await DashboardService.GetDashboardDataAsync();
+        
+        // Subscribe to SignalR events
+        SignalRService.DashboardUpdated += OnDashboardUpdated;
+        SignalRService.ActivityUpdated += OnActivityUpdated;
+        SignalRService.EmployeeStatusUpdated += OnEmployeeStatusUpdated;
+        SignalRService.ScreenshotUpdated += OnScreenshotUpdated;
+        SignalRService.SystemAlertReceived += OnSystemAlertReceived;
+
+        // Set up auto-refresh timer (fallback if SignalR is not connected)
+        _refreshTimer = new Timer(async _ => await RefreshDashboardData(), null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && _dashboardData != null)
+        {
+            await InitializeCharts();
+        }
+    }
+
+    private async void OnDashboardUpdated(object data)
+    {
+        try
+        {
+            // Store previous data for trend calculations
+            _previousData = _dashboardData;
+            
+            // Refresh dashboard data
+            _dashboardData = await DashboardService.GetDashboardDataAsync();
+            
+            // Update UI on main thread
+            await InvokeAsync(async () =>
+            {
+                StateHasChanged();
+                // Update charts with new data
+                await UpdateCharts();
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error handling dashboard update: {ex.Message}");
+        }
+    }
+
+    private async void OnActivityUpdated(object data)
+    {
+        try
+        {
+            // Refresh activity data
+            _dashboardData = await DashboardService.GetDashboardDataAsync();
+            
+            await InvokeAsync(() =>
+            {
+                StateHasChanged();
+                return Task.CompletedTask;
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error handling activity update: {ex.Message}");
+        }
+    }
+
+    private async void OnEmployeeStatusUpdated(object data)
+    {
+        try
+        {
+            // Refresh employee status
+            _dashboardData = await DashboardService.GetDashboardDataAsync();
+            
+            await InvokeAsync(async () =>
+            {
+                StateHasChanged();
+                // Update status chart
+                await JSRuntime.InvokeVoidAsync("updateChartData", "statusChart", GetStatusData());
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error handling employee status update: {ex.Message}");
+        }
+    }
+
+    private async void OnScreenshotUpdated(object data)
+    {
+        try
+        {
+            _dashboardData = await DashboardService.GetDashboardDataAsync();
+            await InvokeAsync(() =>
+            {
+                StateHasChanged();
+                return Task.CompletedTask;
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error handling screenshot update: {ex.Message}");
+        }
+    }
+
+    private async void OnSystemAlertReceived(object data)
+    {
+        try
+        {
+            _dashboardData = await DashboardService.GetDashboardDataAsync();
+            await InvokeAsync(() =>
+            {
+                StateHasChanged();
+                return Task.CompletedTask;
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error handling system alert: {ex.Message}");
+        }
+    }
+
+    private async Task RefreshDashboardData()
+    {
+        try
+        {
+            _previousData = _dashboardData;
+            _dashboardData = await DashboardService.GetDashboardDataAsync();
+            await InvokeAsync(() =>
+            {
+                StateHasChanged();
+                return Task.CompletedTask;
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error refreshing dashboard data: {ex.Message}");
+        }
+    }
+
+    private async Task InitializeCharts()
+    {
+        // Initialize Productivity Chart
+        await JSRuntime.InvokeVoidAsync("initializeProductivityChart", GetProductivityData());
+        
+        // Initialize Status Chart (Doughnut)
+        await JSRuntime.InvokeVoidAsync("initializeStatusChart", GetStatusData());
+        
+        // Initialize Applications Chart
+        await JSRuntime.InvokeVoidAsync("initializeApplicationsChart", GetApplicationsData());
+    }
+
+    private async Task UpdateCharts()
+    {
+        try
+        {
+            // Update all charts with new data
+            await JSRuntime.InvokeVoidAsync("updateChartData", "productivityChart", GetProductivityData());
+            await JSRuntime.InvokeVoidAsync("updateChartData", "statusChart", GetStatusData());
+            await JSRuntime.InvokeVoidAsync("updateChartData", "applicationsChart", GetApplicationsData());
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating charts: {ex.Message}");
+        }
+    }
+
+    private object GetProductivityData()
+    {
+        return new
+        {
+            labels = new[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" },
+            datasets = new[]
+            {
+                new
+                {
+                    label = "Productive Hours",
+                    data = new[] { 65, 78, 82, 76, 89, 45, 23 },
+                    borderColor = "#2563EB",
+                    backgroundColor = "rgba(37, 99, 235, 0.1)",
+                    tension = 0.4
+                },
+                new
+                {
+                    label = "Total Hours",
+                    data = new[] { 80, 85, 90, 85, 95, 60, 40 },
+                    borderColor = "#7C3AED",
+                    backgroundColor = "rgba(124, 58, 237, 0.1)",
+                    tension = 0.4
+                }
+            }
+        };
+    }
+
+    private object GetStatusData()
+    {
+        return new
+        {
+            labels = new[] { "Online", "Idle", "Offline" },
+            datasets = new[]
+            {
+                new
+                {
+                    data = new[] { _dashboardData?.OnlineEmployees ?? 0, _dashboardData?.IdleEmployees ?? 0, _dashboardData?.OfflineEmployees ?? 0 },
+                    backgroundColor = new[] { "#10B981", "#F59E0B", "#EF4444" },
+                    borderWidth = 2,
+                    borderColor = "#ffffff"
+                }
+            }
+        };
+    }
+
+    private object GetApplicationsData()
+    {
+        var topApps = _dashboardData?.TopApplications?.Take(6) ?? new List<ApplicationUsageData>();
+        return new
+        {
+            labels = topApps.Select(a => a.ApplicationName).ToArray(),
+            datasets = new[]
+            {
+                new
+                {
+                    label = "Usage Hours",
+                    data = topApps.Select(a => a.TotalHours).ToArray(),
+                    backgroundColor = new[] { "#2563EB", "#7C3AED", "#10B981", "#F59E0B", "#EF4444", "#6B7280" },
+                    borderWidth = 0
+                }
+            }
+        };
+    }
+
+    private string GetActivityClass(ActivityType activityType)
+    {
+        return activityType switch
+        {
+            ActivityType.Login => "activity-login",
+            ActivityType.Logout => "activity-logout",
+            ActivityType.FileAccess => "activity-file",
+            ActivityType.ApplicationStart or ActivityType.ApplicationEnd => "activity-app",
+            ActivityType.UsbDevice => "activity-security",
+            ActivityType.SystemEvent => "activity-violation",
+            _ => "activity-general"
+        };
+    }
+
+    private string GetActivityIcon(ActivityType activityType)
+    {
+        return activityType switch
+        {
+            ActivityType.Login => "fas fa-sign-in-alt",
+            ActivityType.Logout => "fas fa-sign-out-alt",
+            ActivityType.FileAccess => "fas fa-file",
+            ActivityType.ApplicationStart or ActivityType.ApplicationEnd => "fas fa-desktop",
+            ActivityType.UsbDevice => "fas fa-shield-alt",
+            ActivityType.SystemEvent => "fas fa-exclamation-triangle",
+            ActivityType.WebsiteVisit => "fas fa-globe",
+            ActivityType.ScreenCapture => "fas fa-camera",
+            ActivityType.PrintJob => "fas fa-print",
+            ActivityType.EmailActivity => "fas fa-envelope",
+            _ => "fas fa-info-circle"
+        };
+    }
+
+    private string GetAlertSeverity(ActivityType activityType)
+    {
+        return activityType switch
+        {
+            ActivityType.UsbDevice => "alert-high",
+            ActivityType.SystemEvent => "alert-medium",
+            _ => "alert-low"
+        };
+    }
+
+    private string GetAlertIcon(ActivityType activityType)
+    {
+        return activityType switch
+        {
+            ActivityType.UsbDevice => "fas fa-shield-alt",
+            ActivityType.SystemEvent => "fas fa-exclamation-triangle",
+            _ => "fas fa-info-circle"
+        };
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        // Unsubscribe from SignalR events
+        SignalRService.DashboardUpdated -= OnDashboardUpdated;
+        SignalRService.ActivityUpdated -= OnActivityUpdated;
+        SignalRService.EmployeeStatusUpdated -= OnEmployeeStatusUpdated;
+        SignalRService.ScreenshotUpdated -= OnScreenshotUpdated;
+        SignalRService.SystemAlertReceived -= OnSystemAlertReceived;
+
+        // Dispose timer
+        _refreshTimer?.Dispose();
+    }
+} 

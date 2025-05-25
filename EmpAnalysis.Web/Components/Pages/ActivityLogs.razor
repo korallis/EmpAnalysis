@@ -1,0 +1,699 @@
+@page "/activity-logs"
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Activity Logs - EmpAnalysis</PageTitle>
+
+<div class="activity-logs-container">
+    <!-- Header Section -->
+    <div class="page-header mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h1 class="page-title">
+                    <i class="fas fa-history me-2"></i>
+                    Activity Logs
+                </h1>
+                <p class="text-muted">Real-time employee activity monitoring and tracking</p>
+            </div>
+            <div class="col-md-6 text-end">
+                <div class="d-flex align-items-center justify-content-end">
+                    <div class="me-3">
+                        <span class="badge bg-success me-2" id="live-indicator">
+                            <i class="fas fa-circle pulse me-1"></i>Live
+                        </span>
+                        <small class="text-muted">Auto-refresh: 30s</small>
+                    </div>
+                    <button class="btn btn-primary" @onclick="RefreshActivities">
+                        <i class="fas fa-sync-alt me-2"></i>
+                        Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-lg-6 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon bg-primary bg-gradient me-3">
+                            <i class="fas fa-mouse-pointer text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="mb-0">@totalActivities</h3>
+                            <small class="text-muted">Total Activities</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-lg-6 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon bg-success bg-gradient me-3">
+                            <i class="fas fa-users text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="mb-0">@activeEmployees</h3>
+                            <small class="text-muted">Active Employees</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-lg-6 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon bg-warning bg-gradient me-3">
+                            <i class="fas fa-desktop text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="mb-0">@uniqueApplications</h3>
+                            <small class="text-muted">Applications Used</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-lg-6 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon bg-info bg-gradient me-3">
+                            <i class="fas fa-clock text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="mb-0">@Math.Round(averageSessionTime, 1)h</h3>
+                            <small class="text-muted">Avg Session Time</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters and Controls -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-3">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" class="form-control ps-5" placeholder="Search activities..." @bind="searchTerm" @oninput="OnSearchChanged" />
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" @bind="selectedEmployee" @bind:after="OnFilterChanged">
+                        <option value="">All Employees</option>
+                        @foreach (var emp in GetUniqueEmployees())
+                        {
+                            <option value="@emp">@emp</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" @bind="selectedActivityType" @bind:after="OnFilterChanged">
+                        <option value="">All Types</option>
+                        <option value="Application">Application</option>
+                        <option value="Web Browsing">Web Browsing</option>
+                        <option value="File Access">File Access</option>
+                        <option value="System">System</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" @bind="selectedTimeFilter" @bind:after="OnFilterChanged">
+                        <option value="today">Today</option>
+                        <option value="yesterday">Yesterday</option>
+                        <option value="week">This Week</option>
+                        <option value="month">This Month</option>
+                        <option value="all">All Time</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <div class="d-flex align-items-center justify-content-end">
+                        <span class="me-2 text-muted">Showing:</span>
+                        <span class="badge bg-primary me-3">@filteredActivities.Count</span>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button class="btn @(viewMode == "detailed" ? "btn-primary" : "btn-outline-primary")" @onclick='() => SetViewMode("detailed")'>
+                                <i class="fas fa-list-ul"></i>
+                            </button>
+                            <button class="btn @(viewMode == "compact" ? "btn-primary" : "btn-outline-primary")" @onclick='() => SetViewMode("compact")'>
+                                <i class="fas fa-th-list"></i>
+                            </button>
+                            <button class="btn @(viewMode == "timeline" ? "btn-primary" : "btn-outline-primary")" @onclick='() => SetViewMode("timeline")'>
+                                <i class="fas fa-clock"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity Logs Display -->
+    @if (viewMode == "detailed")
+    {
+        <div class="activity-detailed-view">
+            @if (filteredActivities.Any())
+            {
+                @foreach (var activity in filteredActivities.Take(currentPage * pageSize))
+                {
+                    <div class="activity-item card border-0 shadow-sm mb-3">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-md-1">
+                                    <div class="activity-icon @GetActivityIconClass(activity.ActivityType)">
+                                        <i class="@GetActivityIcon(activity.ActivityType)"></i>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="d-flex align-items-center">
+                                        <img src="https://via.placeholder.com/32x32/@(GetEmployeeColor(activity.EmployeeName))/ffffff?text=@(activity.EmployeeName.Substring(0,1))" 
+                                             alt="@activity.EmployeeName" class="rounded-circle me-2" width="32" height="32">
+                                        <div>
+                                            <h6 class="mb-0">@activity.EmployeeName</h6>
+                                            <small class="text-muted">@activity.Department</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div>
+                                        <strong>@activity.ActivityType</strong>
+                                        <p class="mb-1 text-muted">@activity.Description</p>
+                                        @if (!string.IsNullOrEmpty(activity.ApplicationName))
+                                        {
+                                            <small class="badge bg-light text-dark">
+                                                <i class="fas fa-window-maximize me-1"></i>@activity.ApplicationName
+                                            </small>
+                                        }
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="text-center">
+                                        <div class="activity-duration">
+                                            <strong>@FormatDuration(activity.Duration)</strong>
+                                        </div>
+                                        <small class="text-muted">Duration</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="text-end">
+                                        <div class="activity-time">
+                                            <strong>@activity.Timestamp.ToString("HH:mm")</strong>
+                                        </div>
+                                        <small class="text-muted">@activity.Timestamp.ToString("MMM dd")</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="empty-state text-center py-5">
+                    <i class="fas fa-history fa-4x text-muted mb-3"></i>
+                    <h3 class="text-muted">No activities found</h3>
+                    <p class="text-muted">Try adjusting your search criteria or filters</p>
+                </div>
+            }
+        </div>
+    }
+
+    @if (viewMode == "compact")
+    {
+        <div class="activity-compact-view">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    @if (filteredActivities.Any())
+                    {
+                        @foreach (var activity in filteredActivities.Take(currentPage * pageSize))
+                        {
+                            <div class="compact-item d-flex align-items-center p-3 border-bottom">
+                                <div class="activity-icon-sm @GetActivityIconClass(activity.ActivityType) me-3">
+                                    <i class="@GetActivityIcon(activity.ActivityType)"></i>
+                                </div>
+                                <img src="https://via.placeholder.com/28x28/@(GetEmployeeColor(activity.EmployeeName))/ffffff?text=@(activity.EmployeeName.Substring(0,1))" 
+                                     alt="@activity.EmployeeName" class="rounded-circle me-2" width="28" height="28">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center">
+                                        <strong class="me-2">@activity.EmployeeName</strong>
+                                        <span class="text-muted me-2">•</span>
+                                        <span class="me-2">@activity.ActivityType</span>
+                                        @if (!string.IsNullOrEmpty(activity.ApplicationName))
+                                        {
+                                            <span class="badge bg-light text-dark ms-auto">@activity.ApplicationName</span>
+                                        }
+                                    </div>
+                                    <small class="text-muted">@activity.Description</small>
+                                </div>
+                                <div class="text-end ms-3">
+                                    <small class="text-muted">@activity.Timestamp.ToString("HH:mm")</small>
+                                    <div class="text-muted">@FormatDuration(activity.Duration)</div>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-th-list fa-3x text-muted mb-3"></i>
+                            <h4 class="text-muted">No activities to display</h4>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (viewMode == "timeline")
+    {
+        <div class="activity-timeline-view">
+            @if (filteredActivities.Any())
+            {
+                @foreach (var group in GetTimelineGroups())
+                {
+                    <div class="timeline-group mb-4">
+                        <h5 class="timeline-date">
+                            <i class="fas fa-calendar-day me-2"></i>
+                            @group.Key.ToString("MMMM dd, yyyy")
+                        </h5>
+                        <div class="timeline-container">
+                            @foreach (var activity in group.OrderByDescending(a => a.Timestamp))
+                            {
+                                <div class="timeline-item d-flex mb-3">
+                                    <div class="timeline-time text-muted me-3">
+                                        @activity.Timestamp.ToString("HH:mm")
+                                    </div>
+                                    <div class="timeline-icon-wrapper me-3">
+                                        <div class="timeline-icon @GetActivityIconClass(activity.ActivityType)">
+                                            <i class="@GetActivityIcon(activity.ActivityType)"></i>
+                                        </div>
+                                    </div>
+                                    <div class="timeline-content flex-grow-1">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <img src="https://via.placeholder.com/24x24/@(GetEmployeeColor(activity.EmployeeName))/ffffff?text=@(activity.EmployeeName.Substring(0,1))" 
+                                                 alt="@activity.EmployeeName" class="rounded-circle me-2" width="24" height="24">
+                                            <strong class="me-2">@activity.EmployeeName</strong>
+                                            <span class="badge bg-light text-dark">@activity.ActivityType</span>
+                                            <span class="ms-auto text-muted small">@FormatDuration(activity.Duration)</span>
+                                        </div>
+                                        <p class="mb-0 text-muted">@activity.Description</p>
+                                        @if (!string.IsNullOrEmpty(activity.ApplicationName))
+                                        {
+                                            <small class="text-muted">
+                                                <i class="fas fa-window-maximize me-1"></i>@activity.ApplicationName
+                                            </small>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="empty-state text-center py-5">
+                    <i class="fas fa-clock fa-4x text-muted mb-3"></i>
+                    <h3 class="text-muted">No timeline data</h3>
+                    <p class="text-muted">Activities will be organized by date once available</p>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- Load More Button -->
+    @if (filteredActivities.Count > currentPage * pageSize)
+    {
+        <div class="text-center mt-4">
+            <button class="btn btn-outline-primary" @onclick="LoadMore">
+                <i class="fas fa-plus me-2"></i>
+                Load More Activities
+            </button>
+        </div>
+    }
+</div>
+
+<style>
+    .search-box {
+        position: relative;
+    }
+    .search-box i {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        z-index: 3;
+    }
+    
+    .stats-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+    
+    .activity-icon {
+        width: 45px;
+        height: 45px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        color: white;
+    }
+    
+    .activity-icon-sm {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+        color: white;
+    }
+    
+    .activity-icon.application { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    .activity-icon.web { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+    .activity-icon.file { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+    .activity-icon.system { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+    
+    .activity-icon-sm.application { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    .activity-icon-sm.web { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+    .activity-icon-sm.file { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+    .activity-icon-sm.system { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+    
+    .activity-item {
+        transition: all 0.2s ease;
+    }
+    .activity-item:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+    }
+    
+    .compact-item {
+        transition: background-color 0.2s ease;
+    }
+    .compact-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .timeline-container {
+        position: relative;
+        padding-left: 20px;
+    }
+    .timeline-container::before {
+        content: '';
+        position: absolute;
+        left: 35px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #e9ecef;
+    }
+    
+    .timeline-icon-wrapper {
+        position: relative;
+        z-index: 2;
+    }
+    .timeline-icon {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        color: white;
+        border: 3px solid white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .pulse {
+        animation: pulse 2s infinite;
+    }
+    
+    @@keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+    
+    .empty-state {
+        padding: 4rem 2rem;
+    }
+</style>
+
+@code {
+    private List<ActivityLogViewModel> activities = new();
+    private List<ActivityLogViewModel> filteredActivities = new();
+    
+    private string searchTerm = "";
+    private string selectedEmployee = "";
+    private string selectedActivityType = "";
+    private string selectedTimeFilter = "today";
+    private string viewMode = "detailed";
+    
+    private int currentPage = 1;
+    private int pageSize = 20;
+    
+    // Stats
+    private int totalActivities => filteredActivities.Count;
+    private int activeEmployees => filteredActivities.Select(a => a.EmployeeName).Distinct().Count();
+    private int uniqueApplications => filteredActivities.Where(a => !string.IsNullOrEmpty(a.ApplicationName)).Select(a => a.ApplicationName).Distinct().Count();
+    private double averageSessionTime => filteredActivities.Any() ? filteredActivities.Average(a => a.Duration.TotalHours) : 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadActivities();
+        FilterActivities();
+        
+        // Start auto-refresh timer
+        _ = Task.Run(async () =>
+        {
+            while (true)
+            {
+                await Task.Delay(30000); // 30 seconds
+                await InvokeAsync(async () =>
+                {
+                    await RefreshActivities();
+                    StateHasChanged();
+                });
+            }
+        });
+    }
+
+    private async Task LoadActivities()
+    {
+        try
+        {
+            var response = await Http.GetAsync("api/activity-logs");
+            if (response.IsSuccessStatusCode)
+            {
+                activities = await response.Content.ReadFromJsonAsync<List<ActivityLogViewModel>>() ?? new();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading activities: {ex.Message}");
+            LoadSampleActivities();
+        }
+    }
+
+    private void LoadSampleActivities()
+    {
+        var now = DateTime.Now;
+        var random = new Random();
+        activities = new List<ActivityLogViewModel>();
+
+        var employees = new[]
+        {
+            new { Name = "John Doe", Department = "IT" },
+            new { Name = "Jane Smith", Department = "Marketing" },
+            new { Name = "Mike Johnson", Department = "Sales" },
+            new { Name = "Sarah Wilson", Department = "HR" },
+            new { Name = "David Brown", Department = "Finance" },
+            new { Name = "Lisa Chen", Department = "IT" }
+        };
+
+        var activityTypes = new[] { "Application", "Web Browsing", "File Access", "System" };
+        var applications = new[] { "VS Code", "Chrome", "Outlook", "Excel", "Word", "Teams", "Slack", "Firefox", "Notepad", "PowerPoint" };
+        var descriptions = new[]
+        {
+            "Working on project documentation",
+            "Reviewing quarterly reports",
+            "Browsing company intranet",
+            "Accessing shared drive files",
+            "Video conference meeting",
+            "Responding to emails",
+            "Creating presentation slides",
+            "Running system diagnostics",
+            "Updating customer database",
+            "Collaborating on team documents"
+        };
+
+        for (int i = 0; i < 100; i++)
+        {
+            var employee = employees[random.Next(employees.Length)];
+            var activityType = activityTypes[random.Next(activityTypes.Length)];
+            var timestamp = now.AddMinutes(-random.Next(0, 2880)); // Last 2 days
+            var duration = TimeSpan.FromMinutes(random.Next(5, 120));
+
+            activities.Add(new ActivityLogViewModel
+            {
+                Id = i + 1,
+                EmployeeName = employee.Name,
+                Department = employee.Department,
+                ActivityType = activityType,
+                Description = descriptions[random.Next(descriptions.Length)],
+                ApplicationName = activityType == "Application" ? applications[random.Next(applications.Length)] : null,
+                Timestamp = timestamp,
+                Duration = duration
+            });
+        }
+
+        activities = activities.OrderByDescending(a => a.Timestamp).ToList();
+    }
+
+    private void FilterActivities()
+    {
+        var query = activities.AsQueryable();
+
+        // Search filter
+        if (!string.IsNullOrEmpty(searchTerm))
+        {
+            query = query.Where(a => 
+                a.EmployeeName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                a.Description.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                a.ActivityType.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                (a.ApplicationName != null && a.ApplicationName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+            );
+        }
+
+        // Employee filter
+        if (!string.IsNullOrEmpty(selectedEmployee))
+        {
+            query = query.Where(a => a.EmployeeName == selectedEmployee);
+        }
+
+        // Activity type filter
+        if (!string.IsNullOrEmpty(selectedActivityType))
+        {
+            query = query.Where(a => a.ActivityType == selectedActivityType);
+        }
+
+        // Time filter
+        var now = DateTime.Now;
+        query = selectedTimeFilter switch
+        {
+            "today" => query.Where(a => a.Timestamp.Date == now.Date),
+            "yesterday" => query.Where(a => a.Timestamp.Date == now.Date.AddDays(-1)),
+            "week" => query.Where(a => a.Timestamp >= now.AddDays(-7)),
+            "month" => query.Where(a => a.Timestamp >= now.AddDays(-30)),
+            _ => query
+        };
+
+        filteredActivities = query.ToList();
+        currentPage = 1; // Reset pagination
+    }
+
+    private void OnSearchChanged(ChangeEventArgs e)
+    {
+        searchTerm = e.Value?.ToString() ?? "";
+        FilterActivities();
+    }
+
+    private void OnFilterChanged()
+    {
+        FilterActivities();
+    }
+
+    private void SetViewMode(string mode)
+    {
+        viewMode = mode;
+        currentPage = 1;
+    }
+
+    private void LoadMore()
+    {
+        currentPage++;
+    }
+
+    private async Task RefreshActivities()
+    {
+        await LoadActivities();
+        FilterActivities();
+    }
+
+    private IEnumerable<string> GetUniqueEmployees()
+    {
+        return activities.Select(a => a.EmployeeName).Distinct().OrderBy(n => n);
+    }
+
+    private IEnumerable<IGrouping<DateTime, ActivityLogViewModel>> GetTimelineGroups()
+    {
+        return filteredActivities.GroupBy(a => a.Timestamp.Date).OrderByDescending(g => g.Key);
+    }
+
+    private string GetActivityIcon(string activityType)
+    {
+        return activityType switch
+        {
+            "Application" => "fas fa-desktop",
+            "Web Browsing" => "fas fa-globe",
+            "File Access" => "fas fa-file",
+            "System" => "fas fa-cog",
+            _ => "fas fa-circle"
+        };
+    }
+
+    private string GetActivityIconClass(string activityType)
+    {
+        return activityType.ToLower().Replace(" ", "");
+    }
+
+    private string GetEmployeeColor(string employeeName)
+    {
+        return employeeName switch
+        {
+            "John Doe" => "4f46e5",
+            "Jane Smith" => "7c3aed",
+            "Mike Johnson" => "059669",
+            "Sarah Wilson" => "dc2626",
+            "David Brown" => "ea580c",
+            "Lisa Chen" => "2563eb",
+            _ => "6b7280"
+        };
+    }
+
+    private string FormatDuration(TimeSpan duration)
+    {
+        if (duration.TotalHours >= 1)
+            return $"{duration.Hours}h {duration.Minutes}m";
+        else
+            return $"{duration.Minutes}m";
+    }
+
+    public class ActivityLogViewModel
+    {
+        public int Id { get; set; }
+        public string EmployeeName { get; set; } = "";
+        public string Department { get; set; } = "";
+        public string ActivityType { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string? ApplicationName { get; set; }
+        public DateTime Timestamp { get; set; }
+        public TimeSpan Duration { get; set; }
+    }
+} 

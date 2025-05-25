@@ -1,0 +1,497 @@
+@page "/employees"
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Employees - EmpAnalysis</PageTitle>
+
+<div class="employees-container">
+    <!-- Header Section -->
+    <div class="page-header mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h1 class="page-title">
+                    <i class="fas fa-users me-2"></i>
+                    Employee Management
+                </h1>
+                <p class="text-muted">Manage employee profiles and monitoring settings</p>
+            </div>
+            <div class="col-md-6 text-end">
+                <button class="btn btn-primary" @onclick="ShowAddEmployeeModal">
+                    <i class="fas fa-plus me-2"></i>
+                    Add Employee
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters and Search -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" class="form-control ps-5" placeholder="Search employees..." @bind="searchTerm" @oninput="OnSearchChanged" />
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" @bind="selectedDepartment" @bind:after="OnFilterChanged">
+                        <option value="">All Departments</option>
+                        <option value="IT">IT</option>
+                        <option value="Marketing">Marketing</option>
+                        <option value="Sales">Sales</option>
+                        <option value="HR">HR</option>
+                        <option value="Finance">Finance</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" @bind="selectedStatus" @bind:after="OnFilterChanged">
+                        <option value="">All Status</option>
+                        <option value="Online">Online</option>
+                        <option value="Offline">Offline</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <div class="d-flex align-items-center">
+                        <span class="me-2 text-muted">Total:</span>
+                        <span class="badge bg-primary">@filteredEmployees.Count</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Employees Grid -->
+    <div class="employees-grid">
+        @if (filteredEmployees.Any())
+        {
+            <div class="row">
+                @foreach (var employee in filteredEmployees)
+                {
+                    <div class="col-xl-4 col-lg-6 mb-4">
+                        <div class="employee-card card border-0 shadow-sm h-100">
+                            <div class="card-body">
+                                <div class="d-flex align-items-start">
+                                    <div class="employee-avatar me-3">
+                                        <img src="https://via.placeholder.com/60x60/@(GetAvatarColor(employee.Department))/ffffff?text=@(employee.Name.Substring(0,1))" 
+                                             alt="@employee.Name" class="rounded-circle" width="60" height="60">
+                                        <span class="status-indicator @(employee.IsOnline ? "status-online" : "status-offline")"></span>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h5 class="card-title mb-1">@employee.Name</h5>
+                                        <p class="text-muted mb-2">@employee.Department</p>
+                                        <p class="text-muted small mb-2">@employee.Email</p>
+                                        <div class="d-flex align-items-center mb-2">
+                                            <span class="badge @(employee.IsOnline ? "bg-success" : "bg-secondary") me-2">
+                                                @(employee.IsOnline ? "Online" : "Offline")
+                                            </span>
+                                            <small class="text-muted">
+                                                @if (employee.IsOnline && !string.IsNullOrEmpty(employee.CurrentActivity))
+                                                {
+                                                    <i class="fas fa-desktop me-1"></i>@employee.CurrentActivity
+                                                }
+                                                else if (!employee.IsOnline)
+                                                {
+                                                    <text><i class="fas fa-clock me-1"></i>Last seen: @employee.LastSeen.ToString("MMM dd, HH:mm")</text>
+                                                }
+                                            </small>
+                                        </div>
+                                        <div class="productivity-bar mb-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <small class="text-muted">Productivity</small>
+                                                <small class="text-muted">@employee.ProductivityScore.ToString("F0")%</small>
+                                            </div>
+                                            <div class="progress" style="height: 6px;">
+                                                <div class="progress-bar @GetProductivityColor(employee.ProductivityScore)" 
+                                                     style="width: @employee.ProductivityScore%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-actions">
+                                    <div class="btn-group w-100" role="group">
+                                        <button class="btn btn-outline-primary btn-sm" @onclick="() => ViewEmployee(employee)">
+                                            <i class="fas fa-eye me-1"></i>View
+                                        </button>
+                                        <button class="btn btn-outline-success btn-sm" @onclick="() => EditEmployee(employee)">
+                                            <i class="fas fa-edit me-1"></i>Edit
+                                        </button>
+                                        <button class="btn btn-outline-danger btn-sm" @onclick="() => DeleteEmployee(employee)">
+                                            <i class="fas fa-trash me-1"></i>Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="empty-state text-center py-5">
+                <i class="fas fa-users fa-4x text-muted mb-3"></i>
+                <h3 class="text-muted">No employees found</h3>
+                <p class="text-muted">@(string.IsNullOrEmpty(searchTerm) ? "Add your first employee to get started" : "Try adjusting your search criteria")</p>
+                @if (string.IsNullOrEmpty(searchTerm))
+                {
+                    <button class="btn btn-primary" @onclick="ShowAddEmployeeModal">
+                        <i class="fas fa-plus me-2"></i>Add First Employee
+                    </button>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Add/Edit Employee Modal -->
+@if (showEmployeeModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas @(isEditMode ? "fa-edit" : "fa-plus") me-2"></i>
+                        @(isEditMode ? "Edit Employee" : "Add New Employee")
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="CloseEmployeeModal"></button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Full Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" @bind="currentEmployee.Name" placeholder="Enter full name" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Email Address <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" @bind="currentEmployee.Email" placeholder="Enter email address" />
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Department</label>
+                                <select class="form-select" @bind="currentEmployee.Department">
+                                    <option value="">Select Department</option>
+                                    <option value="IT">IT</option>
+                                    <option value="Marketing">Marketing</option>
+                                    <option value="Sales">Sales</option>
+                                    <option value="HR">HR</option>
+                                    <option value="Finance">Finance</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Job Title</label>
+                                <input type="text" class="form-control" @bind="currentEmployee.JobTitle" placeholder="Enter job title" />
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Manager</label>
+                                <input type="text" class="form-control" @bind="currentEmployee.Manager" placeholder="Enter manager name" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Start Date</label>
+                                <input type="date" class="form-control" @bind="currentEmployee.StartDate" />
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Monitoring Settings</label>
+                            <div class="monitoring-settings p-3 border rounded">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" @bind="currentEmployee.ScreenshotEnabled" id="screenshotEnabled">
+                                    <label class="form-check-label" for="screenshotEnabled">
+                                        Enable Screenshot Monitoring
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" @bind="currentEmployee.ActivityTrackingEnabled" id="activityEnabled">
+                                    <label class="form-check-label" for="activityEnabled">
+                                        Enable Activity Tracking
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" @bind="currentEmployee.WebMonitoringEnabled" id="webEnabled">
+                                    <label class="form-check-label" for="webEnabled">
+                                        Enable Web Monitoring
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseEmployeeModal">Cancel</button>
+                    <button type="button" class="btn btn-primary" @onclick="SaveEmployee">
+                        <i class="fas fa-save me-2"></i>
+                        @(isEditMode ? "Update Employee" : "Add Employee")
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .search-box {
+        position: relative;
+    }
+    .search-box i {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        z-index: 3;
+    }
+    
+    .employee-card {
+        transition: all 0.3s ease;
+        border: 1px solid rgba(0,0,0,0.1) !important;
+    }
+    .employee-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+    }
+    
+    .employee-avatar {
+        position: relative;
+    }
+    .status-indicator {
+        position: absolute;
+        bottom: 5px;
+        right: 5px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 2px solid white;
+    }
+    .status-online {
+        background-color: #28a745;
+    }
+    .status-offline {
+        background-color: #6c757d;
+    }
+    
+    .productivity-bar .progress-bar {
+        transition: width 0.6s ease;
+    }
+    
+    .card-actions {
+        margin-top: auto;
+    }
+    
+    .monitoring-settings {
+        background-color: #f8f9fa;
+    }
+    
+    .empty-state {
+        padding: 4rem 2rem;
+    }
+</style>
+
+@code {
+    private List<EmployeeViewModel> employees = new();
+    private List<EmployeeViewModel> filteredEmployees = new();
+    private string searchTerm = "";
+    private string selectedDepartment = "";
+    private string selectedStatus = "";
+    
+    private bool showEmployeeModal = false;
+    private bool isEditMode = false;
+    private EmployeeViewModel currentEmployee = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEmployees();
+        FilterEmployees();
+    }
+
+    private async Task LoadEmployees()
+    {
+        try
+        {
+            var response = await Http.GetAsync("api/employees");
+            if (response.IsSuccessStatusCode)
+            {
+                employees = await response.Content.ReadFromJsonAsync<List<EmployeeViewModel>>() ?? new();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading employees: {ex.Message}");
+            // Load sample data for demonstration
+            LoadSampleEmployees();
+        }
+    }
+
+    private void LoadSampleEmployees()
+    {
+        employees = new List<EmployeeViewModel>
+        {
+            new() { Id = 1, Name = "John Doe", Email = "john.doe@company.com", Department = "IT", JobTitle = "Senior Developer", Manager = "Sarah Wilson", StartDate = DateTime.Now.AddYears(-2), IsOnline = true, CurrentActivity = "VS Code", ProductivityScore = 85, LastSeen = DateTime.Now.AddMinutes(-5), ScreenshotEnabled = true, ActivityTrackingEnabled = true, WebMonitoringEnabled = true },
+            new() { Id = 2, Name = "Jane Smith", Email = "jane.smith@company.com", Department = "Marketing", JobTitle = "Marketing Manager", Manager = "Mike Johnson", StartDate = DateTime.Now.AddMonths(-8), IsOnline = true, CurrentActivity = "Chrome - Analytics", ProductivityScore = 78, LastSeen = DateTime.Now.AddMinutes(-2), ScreenshotEnabled = true, ActivityTrackingEnabled = true, WebMonitoringEnabled = false },
+            new() { Id = 3, Name = "Mike Johnson", Email = "mike.johnson@company.com", Department = "Sales", JobTitle = "Sales Director", Manager = "CEO", StartDate = DateTime.Now.AddYears(-3), IsOnline = false, CurrentActivity = "", ProductivityScore = 92, LastSeen = DateTime.Now.AddHours(-2), ScreenshotEnabled = true, ActivityTrackingEnabled = true, WebMonitoringEnabled = true },
+            new() { Id = 4, Name = "Sarah Wilson", Email = "sarah.wilson@company.com", Department = "HR", JobTitle = "HR Manager", Manager = "CEO", StartDate = DateTime.Now.AddYears(-1), IsOnline = true, CurrentActivity = "Outlook", ProductivityScore = 67, LastSeen = DateTime.Now.AddMinutes(-10), ScreenshotEnabled = false, ActivityTrackingEnabled = true, WebMonitoringEnabled = true },
+            new() { Id = 5, Name = "David Brown", Email = "david.brown@company.com", Department = "Finance", JobTitle = "Financial Analyst", Manager = "CFO", StartDate = DateTime.Now.AddMonths(-6), IsOnline = false, CurrentActivity = "", ProductivityScore = 74, LastSeen = DateTime.Now.AddHours(-4), ScreenshotEnabled = true, ActivityTrackingEnabled = true, WebMonitoringEnabled = false },
+            new() { Id = 6, Name = "Lisa Chen", Email = "lisa.chen@company.com", Department = "IT", JobTitle = "DevOps Engineer", Manager = "Sarah Wilson", StartDate = DateTime.Now.AddMonths(-10), IsOnline = true, CurrentActivity = "Terminal", ProductivityScore = 88, LastSeen = DateTime.Now, ScreenshotEnabled = true, ActivityTrackingEnabled = true, WebMonitoringEnabled = true }
+        };
+    }
+
+    private void FilterEmployees()
+    {
+        filteredEmployees = employees.Where(e => 
+            (string.IsNullOrEmpty(searchTerm) || e.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) || 
+             e.Email.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) || 
+             e.Department.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) &&
+            (string.IsNullOrEmpty(selectedDepartment) || e.Department == selectedDepartment) &&
+            (string.IsNullOrEmpty(selectedStatus) || (selectedStatus == "Online" && e.IsOnline) || (selectedStatus == "Offline" && !e.IsOnline))
+        ).ToList();
+    }
+
+    private void OnSearchChanged(ChangeEventArgs e)
+    {
+        searchTerm = e.Value?.ToString() ?? "";
+        FilterEmployees();
+    }
+
+    private void OnFilterChanged()
+    {
+        FilterEmployees();
+    }
+
+    private void ShowAddEmployeeModal()
+    {
+        currentEmployee = new EmployeeViewModel { StartDate = DateTime.Today };
+        isEditMode = false;
+        showEmployeeModal = true;
+    }
+
+    private void EditEmployee(EmployeeViewModel employee)
+    {
+        currentEmployee = new EmployeeViewModel
+        {
+            Id = employee.Id,
+            Name = employee.Name,
+            Email = employee.Email,
+            Department = employee.Department,
+            JobTitle = employee.JobTitle,
+            Manager = employee.Manager,
+            StartDate = employee.StartDate,
+            ScreenshotEnabled = employee.ScreenshotEnabled,
+            ActivityTrackingEnabled = employee.ActivityTrackingEnabled,
+            WebMonitoringEnabled = employee.WebMonitoringEnabled
+        };
+        isEditMode = true;
+        showEmployeeModal = true;
+    }
+
+    private void ViewEmployee(EmployeeViewModel employee)
+    {
+        // Navigate to employee detail view (to be implemented)
+        Console.WriteLine($"Viewing employee: {employee.Name}");
+    }
+
+    private void DeleteEmployee(EmployeeViewModel employee)
+    {
+        // Show confirmation dialog and delete (to be implemented)
+        employees.Remove(employee);
+        FilterEmployees();
+        StateHasChanged();
+    }
+
+    private void CloseEmployeeModal()
+    {
+        showEmployeeModal = false;
+        currentEmployee = new();
+    }
+
+    private async Task SaveEmployee()
+    {
+        if (string.IsNullOrWhiteSpace(currentEmployee.Name) || string.IsNullOrWhiteSpace(currentEmployee.Email))
+        {
+            // Show validation error
+            return;
+        }
+
+        try
+        {
+            if (isEditMode)
+            {
+                // Update existing employee
+                var existingEmployee = employees.FirstOrDefault(e => e.Id == currentEmployee.Id);
+                if (existingEmployee != null)
+                {
+                    existingEmployee.Name = currentEmployee.Name;
+                    existingEmployee.Email = currentEmployee.Email;
+                    existingEmployee.Department = currentEmployee.Department;
+                    existingEmployee.JobTitle = currentEmployee.JobTitle;
+                    existingEmployee.Manager = currentEmployee.Manager;
+                    existingEmployee.StartDate = currentEmployee.StartDate;
+                    existingEmployee.ScreenshotEnabled = currentEmployee.ScreenshotEnabled;
+                    existingEmployee.ActivityTrackingEnabled = currentEmployee.ActivityTrackingEnabled;
+                    existingEmployee.WebMonitoringEnabled = currentEmployee.WebMonitoringEnabled;
+                }
+            }
+            else
+            {
+                // Add new employee
+                currentEmployee.Id = employees.Count > 0 ? employees.Max(e => e.Id) + 1 : 1;
+                currentEmployee.IsOnline = false;
+                currentEmployee.ProductivityScore = 0;
+                currentEmployee.LastSeen = DateTime.Now;
+                employees.Add(currentEmployee);
+            }
+
+            FilterEmployees();
+            CloseEmployeeModal();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving employee: {ex.Message}");
+        }
+    }
+
+    private string GetAvatarColor(string department)
+    {
+        return department switch
+        {
+            "IT" => "4f46e5",
+            "Marketing" => "7c3aed",
+            "Sales" => "059669",
+            "HR" => "dc2626",
+            "Finance" => "ea580c",
+            _ => "6b7280"
+        };
+    }
+
+    private string GetProductivityColor(double score)
+    {
+        return score switch
+        {
+            >= 80 => "bg-success",
+            >= 60 => "bg-warning",
+            _ => "bg-danger"
+        };
+    }
+
+    public class EmployeeViewModel
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string Department { get; set; } = "";
+        public string JobTitle { get; set; } = "";
+        public string Manager { get; set; } = "";
+        public DateTime StartDate { get; set; } = DateTime.Today;
+        public bool IsOnline { get; set; }
+        public string CurrentActivity { get; set; } = "";
+        public double ProductivityScore { get; set; }
+        public DateTime LastSeen { get; set; } = DateTime.Now;
+        public bool ScreenshotEnabled { get; set; } = true;
+        public bool ActivityTrackingEnabled { get; set; } = true;
+        public bool WebMonitoringEnabled { get; set; } = true;
+    }
+} 

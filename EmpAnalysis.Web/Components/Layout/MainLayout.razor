@@ -1,0 +1,57 @@
+﻿@inherits LayoutComponentBase
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EmpAnalysis - Employee Monitoring Dashboard</title>
+    <link href="~/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="~/css/site.css" rel="stylesheet" />
+    <link href="~/css/dashboard.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <link href="~/EmpAnalysis.Web.styles.css" rel="stylesheet" />
+</head>
+<body>
+    <div class="page">
+        <div class="sidebar">
+            <NavMenu />
+        </div>
+
+        <main>
+            <div class="top-row px-4 d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <h6 class="mb-0 text-muted">EmpAnalysis Dashboard</h6>
+                </div>
+                <div class="d-flex align-items-center">
+                    <button class="btn btn-sm btn-outline-secondary me-2" onclick="toggleTheme()">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary" onclick="window.location.reload()">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </div>
+
+            <article class="content px-4">
+                @Body
+            </article>
+        </main>
+    </div>
+
+    <div id="blazor-error-ui">
+        <div class="alert alert-danger">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            An unhandled error has occurred.
+            <a href="" class="reload btn btn-outline-danger btn-sm ms-2">Reload</a>
+            <a class="dismiss btn btn-outline-secondary btn-sm ms-1">🗙</a>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="~/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="~/js/dashboard.js"></script>
+    <script src="~/_framework/blazor.web.js"></script>
+</body>
+</html>

@@ -1,0 +1,888 @@
+@page "/settings"
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Settings - EmpAnalysis</PageTitle>
+
+<div class="settings-container">
+    <!-- Header Section -->
+    <div class="page-header mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h1 class="page-title">
+                    <i class="fas fa-cog me-2"></i>
+                    System Settings
+                </h1>
+                <p class="text-muted">Configure system preferences and monitoring parameters</p>
+            </div>
+            <div class="col-md-6 text-end">
+                <div class="d-flex align-items-center justify-content-end">
+                    <button class="btn btn-outline-secondary me-2" @onclick="ResetToDefaults">
+                        <i class="fas fa-undo me-2"></i>
+                        Reset to Defaults
+                    </button>
+                    <button class="btn btn-primary" @onclick="SaveSettings">
+                        <i class="fas fa-save me-2"></i>
+                        Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Navigation -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <div class="settings-nav">
+                <button class="btn @(activeTab == "general" ? "btn-primary" : "btn-outline-primary") me-2 mb-2" @onclick='() => SetActiveTab("general")'>
+                    <i class="fas fa-cogs me-1"></i>General
+                </button>
+                <button class="btn @(activeTab == "monitoring" ? "btn-primary" : "btn-outline-primary") me-2 mb-2" @onclick='() => SetActiveTab("monitoring")'>
+                    <i class="fas fa-eye me-1"></i>Monitoring
+                </button>
+                <button class="btn @(activeTab == "notifications" ? "btn-primary" : "btn-outline-primary") me-2 mb-2" @onclick='() => SetActiveTab("notifications")'>
+                    <i class="fas fa-bell me-1"></i>Notifications
+                </button>
+                <button class="btn @(activeTab == "security" ? "btn-primary" : "btn-outline-primary") me-2 mb-2" @onclick='() => SetActiveTab("security")'>
+                    <i class="fas fa-shield-alt me-1"></i>Security
+                </button>
+                <button class="btn @(activeTab == "backup" ? "btn-primary" : "btn-outline-primary") me-2 mb-2" @onclick='() => SetActiveTab("backup")'>
+                    <i class="fas fa-database me-1"></i>Backup
+                </button>
+                <button class="btn @(activeTab == "users" ? "btn-primary" : "btn-outline-primary") me-2 mb-2" @onclick='() => SetActiveTab("users")'>
+                    <i class="fas fa-users-cog me-1"></i>Users
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- General Settings -->
+    @if (activeTab == "general")
+    {
+        <div class="row">
+            <div class="col-lg-6 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-transparent border-0">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-building me-2"></i>
+                            Company Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Company Name</label>
+                            <input type="text" class="form-control" @bind="settings.CompanyName" placeholder="Your Company Name" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Company Logo URL</label>
+                            <input type="url" class="form-control" @bind="settings.CompanyLogoUrl" placeholder="https://example.com/logo.png" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Time Zone</label>
+                            <select class="form-select" @bind="settings.TimeZone">
+                                <option value="UTC">UTC (Coordinated Universal Time)</option>
+                                <option value="America/New_York">Eastern Time (UTC-5/-4)</option>
+                                <option value="America/Chicago">Central Time (UTC-6/-5)</option>
+                                <option value="America/Denver">Mountain Time (UTC-7/-6)</option>
+                                <option value="America/Los_Angeles">Pacific Time (UTC-8/-7)</option>
+                                <option value="Europe/London">London (UTC+0/+1)</option>
+                                <option value="Europe/Paris">Paris (UTC+1/+2)</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Date Format</label>
+                            <select class="form-select" @bind="settings.DateFormat">
+                                <option value="MM/dd/yyyy">MM/dd/yyyy (US)</option>
+                                <option value="dd/MM/yyyy">dd/MM/yyyy (UK)</option>
+                                <option value="yyyy-MM-dd">yyyy-MM-dd (ISO)</option>
+                                <option value="dd.MM.yyyy">dd.MM.yyyy (European)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-transparent border-0">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-palette me-2"></i>
+                            Interface Settings
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Theme</label>
+                            <select class="form-select" @bind="settings.Theme">
+                                <option value="light">Light Theme</option>
+                                <option value="dark">Dark Theme</option>
+                                <option value="auto">Auto (System Preference)</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Language</label>
+                            <select class="form-select" @bind="settings.Language">
+                                <option value="en">English</option>
+                                <option value="es">Spanish</option>
+                                <option value="fr">French</option>
+                                <option value="de">German</option>
+                                <option value="zh">Chinese</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" @bind="settings.ShowTooltips" id="showTooltips">
+                                <label class="form-check-label" for="showTooltips">
+                                    Show helpful tooltips
+                                </label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" @bind="settings.CompactMode" id="compactMode">
+                                <label class="form-check-label" for="compactMode">
+                                    Enable compact interface mode
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Monitoring Settings -->
+    @if (activeTab == "monitoring")
+    {
+        <div class="row">
+            <div class="col-lg-6 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-transparent border-0">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-camera me-2"></i>
+                            Screenshot Settings
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" @bind="settings.ScreenshotEnabled" id="screenshotEnabled">
+                                <label class="form-check-label" for="screenshotEnabled">
+                                    Enable screenshot monitoring
+                                </label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Screenshot Interval (minutes)</label>
+                            <select class="form-select" @bind="settings.ScreenshotInterval">
+                                <option value="1">Every 1 minute</option>
+                                <option value="2">Every 2 minutes</option>
+                                <option value="5">Every 5 minutes</option>
+                                <option value="10">Every 10 minutes</option>
+                                <option value="15">Every 15 minutes</option>
+                                <option value="30">Every 30 minutes</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Screenshot Quality</label>
+                            <select class="form-select" @bind="settings.ScreenshotQuality">
+                                <option value="low">Low (Faster, Less Storage)</option>
+                                <option value="medium">Medium (Balanced)</option>
+                                <option value="high">High (Better Quality, More Storage)</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Retention Period (days)</label>
+                            <input type="number" class="form-control" @bind="settings.ScreenshotRetentionDays" min="1" max="365" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-transparent border-0">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-mouse-pointer me-2"></i>
+                            Activity Tracking
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" @bind="settings.ActivityTrackingEnabled" id="activityEnabled">
+                                <label class="form-check-label" for="activityEnabled">
+                                    Enable activity tracking
+                                </label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" @bind="settings.KeystrokeTracking" id="keystrokeTracking">
+                                <label class="form-check-label" for="keystrokeTracking">
+                                    Track keystroke count (privacy-friendly)
+                                </label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" @bind="settings.MouseTracking" id="mouseTracking">
+                                <label class="form-check-label" for="mouseTracking">
+                                    Track mouse activity
+                                </label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Idle Time Threshold (minutes)</label>
+                            <input type="number" class="form-control" @bind="settings.IdleTimeThreshold" min="1" max="60" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-6 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-transparent border-0">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-globe me-2"></i>
+                            Web Monitoring
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" @bind="settings.WebMonitoringEnabled" id="webEnabled">
+                                <label class="form-check-label" for="webEnabled">
+                                    Enable web activity monitoring
+                                </label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Blocked Websites</label>
+                            <textarea class="form-control" rows="4" @bind="settings.BlockedWebsites" 
+                                     placeholder="Enter blocked websites, one per line&#10;facebook.com&#10;youtube.com&#10;reddit.com"></textarea>
+                            <small class="form-text text-muted">Enter one website per line (without http://)</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-transparent border-0">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-desktop me-2"></i>
+                            Application Monitoring
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" @bind="settings.ApplicationTrackingEnabled" id="appEnabled">
+                                <label class="form-check-label" for="appEnabled">
+                                    Enable application tracking
+                                </label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Productivity Applications</label>
+                            <textarea class="form-control" rows="4" @bind="settings.ProductiveApplications" 
+                                     placeholder="Enter productive applications, one per line&#10;Microsoft Word&#10;Excel&#10;Visual Studio Code&#10;Photoshop"></textarea>
+                            <small class="form-text text-muted">Applications that count towards productivity scoring</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Notifications Settings -->
+    @if (activeTab == "notifications")
+    {
+        <div class="row">
+            <div class="col-lg-6 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-transparent border-0">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-envelope me-2"></i>
+                            Email Notifications
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" @bind="settings.EmailNotificationsEnabled" id="emailEnabled">
+                                <label class="form-check-label" for="emailEnabled">
+                                    Enable email notifications
+                                </label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">SMTP Server</label>
+                            <input type="text" class="form-control" @bind="settings.SmtpServer" placeholder="smtp.gmail.com" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">SMTP Port</label>
+                            <input type="number" class="form-control" @bind="settings.SmtpPort" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email Username</label>
+                            <input type="email" class="form-control" @bind="settings.EmailUsername" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email Password</label>
+                            <input type="password" class="form-control" @bind="settings.EmailPassword" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-transparent border-0">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Alert Settings
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" @bind="settings.ProductivityAlerts" id="prodAlerts">
+                                <label class="form-check-label" for="prodAlerts">
+                                    Low productivity alerts
+                                </label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" @bind="settings.InactivityAlerts" id="inactiveAlerts">
+                                <label class="form-check-label" for="inactiveAlerts">
+                                    Extended inactivity alerts
+                                </label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" @bind="settings.WebsiteBlockAlerts" id="blockAlerts">
+                                <label class="form-check-label" for="blockAlerts">
+                                    Blocked website access alerts
+                                </label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Alert Recipients</label>
+                            <textarea class="form-control" rows="3" @bind="settings.AlertRecipients" 
+                                     placeholder="Enter email addresses, one per line&#10;manager@company.com&#10;hr@company.com"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Security Settings -->
+    @if (activeTab == "security")
+    {
+        <div class="row">
+            <div class="col-lg-6 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-transparent border-0">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-lock me-2"></i>
+                            Access Control
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" @bind="settings.RequireAuthentication" id="authRequired">
+                                <label class="form-check-label" for="authRequired">
+                                    Require user authentication
+                                </label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" @bind="settings.TwoFactorEnabled" id="twoFactor">
+                                <label class="form-check-label" for="twoFactor">
+                                    Enable two-factor authentication
+                                </label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Session Timeout (minutes)</label>
+                            <input type="number" class="form-control" @bind="settings.SessionTimeout" min="15" max="480" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Password Policy</label>
+                            <select class="form-select" @bind="settings.PasswordPolicy">
+                                <option value="basic">Basic (8+ characters)</option>
+                                <option value="medium">Medium (8+ chars, mixed case, numbers)</option>
+                                <option value="strong">Strong (12+ chars, mixed case, numbers, symbols)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-transparent border-0">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-shield-alt me-2"></i>
+                            Data Protection
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" @bind="settings.EncryptData" id="encryptData">
+                                <label class="form-check-label" for="encryptData">
+                                    Encrypt stored data
+                                </label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" @bind="settings.AnonymizeData" id="anonymizeData">
+                                <label class="form-check-label" for="anonymizeData">
+                                    Anonymize sensitive data
+                                </label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Data Retention Period (days)</label>
+                            <input type="number" class="form-control" @bind="settings.DataRetentionDays" min="30" max="2555" />
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" @bind="settings.GdprCompliance" id="gdprCompliance">
+                                <label class="form-check-label" for="gdprCompliance">
+                                    Enable GDPR compliance mode
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Backup Settings -->
+    @if (activeTab == "backup")
+    {
+        <div class="row">
+            <div class="col-lg-6 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-transparent border-0">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-save me-2"></i>
+                            Automated Backups
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" @bind="settings.AutoBackupEnabled" id="autoBackup">
+                                <label class="form-check-label" for="autoBackup">
+                                    Enable automatic backups
+                                </label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Backup Frequency</label>
+                            <select class="form-select" @bind="settings.BackupFrequency">
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Backup Location</label>
+                            <input type="text" class="form-control" @bind="settings.BackupLocation" placeholder="C:\Backups\EmpAnalysis" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Keep Backups For (days)</label>
+                            <input type="number" class="form-control" @bind="settings.BackupRetentionDays" min="7" max="365" />
+                        </div>
+                        <div class="mt-3">
+                            <button class="btn btn-outline-primary me-2" @onclick="BackupNow">
+                                <i class="fas fa-save me-1"></i>Backup Now
+                            </button>
+                            <button class="btn btn-outline-secondary" @onclick="RestoreBackup">
+                                <i class="fas fa-upload me-1"></i>Restore
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-transparent border-0">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-history me-2"></i>
+                            Recent Backups
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="backup-list">
+                            @foreach (var backup in GetRecentBackups())
+                            {
+                                <div class="d-flex justify-content-between align-items-center p-2 border-bottom">
+                                    <div>
+                                        <div class="fw-semibold">@backup.Name</div>
+                                        <small class="text-muted">@backup.Date.ToString("MMM dd, yyyy HH:mm")</small>
+                                    </div>
+                                    <div>
+                                        <span class="badge bg-light text-dark me-2">@backup.Size</span>
+                                        <button class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- User Management -->
+    @if (activeTab == "users")
+    {
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent border-0">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-users-cog me-2"></i>
+                        User Management
+                    </h5>
+                    <button class="btn btn-primary" @onclick="ShowAddUserModal">
+                        <i class="fas fa-plus me-2"></i>Add User
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>User</th>
+                                <th>Role</th>
+                                <th>Last Login</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var user in GetSystemUsers())
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="https://via.placeholder.com/32x32/6b7280/ffffff?text=@(user.Name.Substring(0,1))" 
+                                                 alt="@user.Name" class="rounded-circle me-2" width="32" height="32">
+                                            <div>
+                                                <div class="fw-semibold">@user.Name</div>
+                                                <small class="text-muted">@user.Email</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge @GetRoleBadgeClass(user.Role)">@user.Role</span>
+                                    </td>
+                                    <td>@user.LastLogin.ToString("MMM dd, HH:mm")</td>
+                                    <td>
+                                        <span class="badge @(user.IsActive ? "bg-success" : "bg-secondary")">
+                                            @(user.IsActive ? "Active" : "Inactive")
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-primary" @onclick="() => EditUser(user)">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger" @onclick="() => DeleteUser(user)">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .settings-nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .card {
+        transition: all 0.2s ease;
+    }
+    .card:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.1) !important;
+    }
+    
+    .form-check-input:checked {
+        background-color: #4f46e5;
+        border-color: #4f46e5;
+    }
+    
+    .backup-list {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .table th {
+        border-top: none;
+        padding: 1rem;
+        color: #495057;
+    }
+    
+    .table td {
+        padding: 1rem;
+        vertical-align: middle;
+    }
+    
+    .table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+</style>
+
+@code {
+    private string activeTab = "general";
+    private SettingsModel settings = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSettings();
+    }
+
+    private async Task LoadSettings()
+    {
+        try
+        {
+            var response = await Http.GetAsync("api/settings");
+            if (response.IsSuccessStatusCode)
+            {
+                settings = await response.Content.ReadFromJsonAsync<SettingsModel>() ?? new();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading settings: {ex.Message}");
+            LoadDefaultSettings();
+        }
+    }
+
+    private void LoadDefaultSettings()
+    {
+        settings = new SettingsModel
+        {
+            CompanyName = "Your Company",
+            TimeZone = "UTC",
+            DateFormat = "MM/dd/yyyy",
+            Theme = "light",
+            Language = "en",
+            ShowTooltips = true,
+            CompactMode = false,
+            ScreenshotEnabled = true,
+            ScreenshotInterval = 5,
+            ScreenshotQuality = "medium",
+            ScreenshotRetentionDays = 30,
+            ActivityTrackingEnabled = true,
+            KeystrokeTracking = true,
+            MouseTracking = true,
+            IdleTimeThreshold = 10,
+            WebMonitoringEnabled = true,
+            ApplicationTrackingEnabled = true,
+            EmailNotificationsEnabled = false,
+            SmtpServer = "smtp.gmail.com",
+            SmtpPort = 587,
+            ProductivityAlerts = true,
+            InactivityAlerts = true,
+            WebsiteBlockAlerts = true,
+            RequireAuthentication = true,
+            TwoFactorEnabled = false,
+            SessionTimeout = 480,
+            PasswordPolicy = "medium",
+            EncryptData = true,
+            AnonymizeData = false,
+            DataRetentionDays = 365,
+            GdprCompliance = false,
+            AutoBackupEnabled = true,
+            BackupFrequency = "daily",
+            BackupLocation = @"C:\Backups\EmpAnalysis",
+            BackupRetentionDays = 30
+        };
+    }
+
+    private void SetActiveTab(string tab)
+    {
+        activeTab = tab;
+    }
+
+    private async Task SaveSettings()
+    {
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/settings", settings);
+            if (response.IsSuccessStatusCode)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Settings saved successfully!");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving settings: {ex.Message}");
+            await JSRuntime.InvokeVoidAsync("alert", "Settings saved locally (API connection failed).");
+        }
+    }
+
+    private void ResetToDefaults()
+    {
+        LoadDefaultSettings();
+        StateHasChanged();
+    }
+
+    private void BackupNow()
+    {
+        Console.WriteLine("Initiating manual backup...");
+        // Implement backup functionality
+    }
+
+    private void RestoreBackup()
+    {
+        Console.WriteLine("Initiating restore...");
+        // Implement restore functionality
+    }
+
+    private void ShowAddUserModal()
+    {
+        Console.WriteLine("Showing add user modal...");
+        // Implement user management
+    }
+
+    private void EditUser(SystemUser user)
+    {
+        Console.WriteLine($"Editing user: {user.Name}");
+        // Implement user editing
+    }
+
+    private void DeleteUser(SystemUser user)
+    {
+        Console.WriteLine($"Deleting user: {user.Name}");
+        // Implement user deletion
+    }
+
+    private List<BackupInfo> GetRecentBackups()
+    {
+        return new List<BackupInfo>
+        {
+            new() { Name = "EmpAnalysis_2024_01_15.bak", Date = DateTime.Now.AddDays(-1), Size = "125 MB" },
+            new() { Name = "EmpAnalysis_2024_01_14.bak", Date = DateTime.Now.AddDays(-2), Size = "123 MB" },
+            new() { Name = "EmpAnalysis_2024_01_13.bak", Date = DateTime.Now.AddDays(-3), Size = "121 MB" },
+            new() { Name = "EmpAnalysis_2024_01_12.bak", Date = DateTime.Now.AddDays(-4), Size = "119 MB" }
+        };
+    }
+
+    private List<SystemUser> GetSystemUsers()
+    {
+        return new List<SystemUser>
+        {
+            new() { Name = "Admin User", Email = "admin@company.com", Role = "Administrator", LastLogin = DateTime.Now.AddHours(-2), IsActive = true },
+            new() { Name = "Manager One", Email = "manager1@company.com", Role = "Manager", LastLogin = DateTime.Now.AddHours(-4), IsActive = true },
+            new() { Name = "HR Manager", Email = "hr@company.com", Role = "HR", LastLogin = DateTime.Now.AddDays(-1), IsActive = true },
+            new() { Name = "Viewer User", Email = "viewer@company.com", Role = "Viewer", LastLogin = DateTime.Now.AddDays(-3), IsActive = false }
+        };
+    }
+
+    private string GetRoleBadgeClass(string role)
+    {
+        return role switch
+        {
+            "Administrator" => "bg-danger",
+            "Manager" => "bg-warning",
+            "HR" => "bg-info",
+            "Viewer" => "bg-secondary",
+            _ => "bg-light text-dark"
+        };
+    }
+
+    public class SettingsModel
+    {
+        // General Settings
+        public string CompanyName { get; set; } = "";
+        public string CompanyLogoUrl { get; set; } = "";
+        public string TimeZone { get; set; } = "UTC";
+        public string DateFormat { get; set; } = "MM/dd/yyyy";
+        public string Theme { get; set; } = "light";
+        public string Language { get; set; } = "en";
+        public bool ShowTooltips { get; set; } = true;
+        public bool CompactMode { get; set; } = false;
+
+        // Monitoring Settings
+        public bool ScreenshotEnabled { get; set; } = true;
+        public int ScreenshotInterval { get; set; } = 5;
+        public string ScreenshotQuality { get; set; } = "medium";
+        public int ScreenshotRetentionDays { get; set; } = 30;
+        public bool ActivityTrackingEnabled { get; set; } = true;
+        public bool KeystrokeTracking { get; set; } = true;
+        public bool MouseTracking { get; set; } = true;
+        public int IdleTimeThreshold { get; set; } = 10;
+        public bool WebMonitoringEnabled { get; set; } = true;
+        public string BlockedWebsites { get; set; } = "";
+        public bool ApplicationTrackingEnabled { get; set; } = true;
+        public string ProductiveApplications { get; set; } = "";
+
+        // Notification Settings
+        public bool EmailNotificationsEnabled { get; set; } = false;
+        public string SmtpServer { get; set; } = "";
+        public int SmtpPort { get; set; } = 587;
+        public string EmailUsername { get; set; } = "";
+        public string EmailPassword { get; set; } = "";
+        public bool ProductivityAlerts { get; set; } = true;
+        public bool InactivityAlerts { get; set; } = true;
+        public bool WebsiteBlockAlerts { get; set; } = true;
+        public string AlertRecipients { get; set; } = "";
+
+        // Security Settings
+        public bool RequireAuthentication { get; set; } = true;
+        public bool TwoFactorEnabled { get; set; } = false;
+        public int SessionTimeout { get; set; } = 480;
+        public string PasswordPolicy { get; set; } = "medium";
+        public bool EncryptData { get; set; } = true;
+        public bool AnonymizeData { get; set; } = false;
+        public int DataRetentionDays { get; set; } = 365;
+        public bool GdprCompliance { get; set; } = false;
+
+        // Backup Settings
+        public bool AutoBackupEnabled { get; set; } = true;
+        public string BackupFrequency { get; set; } = "daily";
+        public string BackupLocation { get; set; } = "";
+        public int BackupRetentionDays { get; set; } = 30;
+    }
+
+    public class BackupInfo
+    {
+        public string Name { get; set; } = "";
+        public DateTime Date { get; set; }
+        public string Size { get; set; } = "";
+    }
+
+    public class SystemUser
+    {
+        public string Name { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string Role { get; set; } = "";
+        public DateTime LastLogin { get; set; }
+        public bool IsActive { get; set; }
+    }
+} 

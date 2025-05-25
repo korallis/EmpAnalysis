@@ -1,0 +1,611 @@
+@page "/reports"
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Reports - EmpAnalysis</PageTitle>
+
+<div class="reports-container">
+    <!-- Header Section -->
+    <div class="page-header mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h1 class="page-title">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    Reports & Analytics
+                </h1>
+                <p class="text-muted">Comprehensive insights and performance analytics</p>
+            </div>
+            <div class="col-md-6 text-end">
+                <div class="d-flex align-items-center justify-content-end">
+                    <button class="btn btn-outline-primary me-2" @onclick="GenerateReport">
+                        <i class="fas fa-play me-2"></i>
+                        Generate Report
+                    </button>
+                    <div class="dropdown">
+                        <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-download me-2"></i>
+                            Export
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" @onclick="@(() => ExportReport("pdf"))"><i class="fas fa-file-pdf me-2"></i>Export as PDF</a></li>
+                            <li><a class="dropdown-item" href="#" @onclick="@(() => ExportReport("excel"))"><i class="fas fa-file-excel me-2"></i>Export as Excel</a></li>
+                            <li><a class="dropdown-item" href="#" @onclick="@(() => ExportReport("csv"))"><i class="fas fa-file-csv me-2"></i>Export as CSV</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Filters -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-3">
+                    <label class="form-label">Date Range</label>
+                    <select class="form-select" @bind="selectedDateRange" @bind:after="OnFilterChanged">
+                        <option value="today">Today</option>
+                        <option value="yesterday">Yesterday</option>
+                        <option value="week">This Week</option>
+                        <option value="month">This Month</option>
+                        <option value="quarter">This Quarter</option>
+                        <option value="year">This Year</option>
+                        <option value="custom">Custom Range</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Employees</label>
+                    <select class="form-select" @bind="selectedEmployee" @bind:after="OnFilterChanged">
+                        <option value="">All Employees</option>
+                        @foreach (var emp in GetUniqueEmployees())
+                        {
+                            <option value="@emp">@emp</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Department</label>
+                    <select class="form-select" @bind="selectedDepartment" @bind:after="OnFilterChanged">
+                        <option value="">All Departments</option>
+                        <option value="IT">IT</option>
+                        <option value="Marketing">Marketing</option>
+                        <option value="Sales">Sales</option>
+                        <option value="HR">HR</option>
+                        <option value="Finance">Finance</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Report Type</label>
+                    <select class="form-select" @bind="selectedReportType" @bind:after="OnFilterChanged">
+                        <option value="productivity">Productivity Report</option>
+                        <option value="attendance">Attendance Report</option>
+                        <option value="activity">Activity Report</option>
+                        <option value="applications">Application Usage</option>
+                        <option value="websites">Website Activity</option>
+                    </select>
+                </div>
+            </div>
+            @if (selectedDateRange == "custom")
+            {
+                <div class="row mt-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Start Date</label>
+                        <input type="date" class="form-control" @bind="customStartDate" @bind:after="OnFilterChanged" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">End Date</label>
+                        <input type="date" class="form-control" @bind="customEndDate" @bind:after="OnFilterChanged" />
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-lg-6 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon bg-primary bg-gradient me-3">
+                            <i class="fas fa-clock text-white"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h3 class="mb-0">@totalHours.ToString("F1")h</h3>
+                            <small class="text-muted">Total Hours Worked</small>
+                            <div class="mt-1">
+                                <small class="text-success">
+                                    <i class="fas fa-arrow-up me-1"></i>
+                                    +12% from last period
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-lg-6 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon bg-success bg-gradient me-3">
+                            <i class="fas fa-percentage text-white"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h3 class="mb-0">@averageProductivity.ToString("F0")%</h3>
+                            <small class="text-muted">Average Productivity</small>
+                            <div class="mt-1">
+                                <small class="text-success">
+                                    <i class="fas fa-arrow-up me-1"></i>
+                                    +5% from last period
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-lg-6 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon bg-warning bg-gradient me-3">
+                            <i class="fas fa-user-check text-white"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h3 class="mb-0">@attendanceRate.ToString("F0")%</h3>
+                            <small class="text-muted">Attendance Rate</small>
+                            <div class="mt-1">
+                                <small class="text-success">
+                                    <i class="fas fa-arrow-up me-1"></i>
+                                    +2% from last period
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-lg-6 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon bg-info bg-gradient me-3">
+                            <i class="fas fa-desktop text-white"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h3 class="mb-0">@totalScreenshots</h3>
+                            <small class="text-muted">Screenshots Captured</small>
+                            <div class="mt-1">
+                                <small class="text-info">
+                                    <i class="fas fa-camera me-1"></i>
+                                    @(totalScreenshots / Math.Max(GetFilteredEmployees().Count(), 1)) per employee
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="row mb-4">
+        <div class="col-xl-8 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-transparent border-0 pb-0">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-line me-2"></i>
+                        @GetChartTitle()
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="mainChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-transparent border-0 pb-0">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>
+                        Distribution
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="pieChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Reports Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-transparent border-0">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-table me-2"></i>
+                    Detailed @selectedReportType.Replace("_", " ") Report
+                </h5>
+                <div class="d-flex align-items-center">
+                    <span class="me-2 text-muted">Show:</span>
+                    <select class="form-select form-select-sm" style="width: auto;" @bind="pageSize" @bind:after="OnPageSizeChanged">
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            @if (GetReportData().Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                @foreach (var header in GetTableHeaders())
+                                {
+                                    <th class="fw-semibold">@header</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var row in GetReportData().Take(pageSize))
+                            {
+                                <tr>
+                                    @foreach (var cell in GetTableRow(row))
+                                    {
+                                        <td>@cell</td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                
+                @if (GetReportData().Count() > pageSize)
+                {
+                    <div class="card-footer bg-transparent border-0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                Showing @Math.Min(pageSize, GetReportData().Count()) of @GetReportData().Count() entries
+                            </small>
+                            <button class="btn btn-outline-primary btn-sm">
+                                Load More
+                            </button>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="fas fa-chart-bar fa-4x text-muted mb-3"></i>
+                    <h4 class="text-muted">No data available</h4>
+                    <p class="text-muted">Try adjusting your filters or date range</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .stats-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+    
+    .card {
+        transition: all 0.2s ease;
+    }
+    .card:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.1) !important;
+    }
+    
+    .table th {
+        border-top: none;
+        padding: 1rem;
+        color: #495057;
+    }
+    
+    .table td {
+        padding: 1rem;
+        vertical-align: middle;
+    }
+    
+    .table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+    
+    canvas {
+        max-height: 300px;
+    }
+</style>
+
+@code {
+    private string selectedDateRange = "week";
+    private string selectedEmployee = "";
+    private string selectedDepartment = "";
+    private string selectedReportType = "productivity";
+    private DateTime customStartDate = DateTime.Today.AddDays(-7);
+    private DateTime customEndDate = DateTime.Today;
+    private int pageSize = 25;
+
+    // Sample data
+    private List<EmployeeReportData> employees = new();
+    private List<ActivityReportData> activities = new();
+
+    // Computed properties
+    private double totalHours => GetFilteredEmployees().Sum(e => e.TotalHours);
+    private double averageProductivity => GetFilteredEmployees().Any() ? GetFilteredEmployees().Average(e => e.ProductivityScore) : 0;
+    private double attendanceRate => GetFilteredEmployees().Any() ? GetFilteredEmployees().Average(e => e.AttendanceRate) : 0;
+    private int totalScreenshots => GetFilteredEmployees().Sum(e => e.ScreenshotCount);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadReportData();
+        await InitializeCharts();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await UpdateCharts();
+        }
+    }
+
+    private async Task LoadReportData()
+    {
+        try
+        {
+            var response = await Http.GetAsync("api/reports");
+            if (response.IsSuccessStatusCode)
+            {
+                // Load from API
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading reports: {ex.Message}");
+            LoadSampleData();
+        }
+    }
+
+    private void LoadSampleData()
+    {
+        var random = new Random();
+        employees = new List<EmployeeReportData>
+        {
+            new() { Name = "John Doe", Department = "IT", TotalHours = 38.5, ProductivityScore = 85, AttendanceRate = 95, ScreenshotCount = 156 },
+            new() { Name = "Jane Smith", Department = "Marketing", TotalHours = 40.0, ProductivityScore = 78, AttendanceRate = 92, ScreenshotCount = 142 },
+            new() { Name = "Mike Johnson", Department = "Sales", TotalHours = 42.5, ProductivityScore = 92, AttendanceRate = 98, ScreenshotCount = 178 },
+            new() { Name = "Sarah Wilson", Department = "HR", TotalHours = 37.0, ProductivityScore = 67, AttendanceRate = 89, ScreenshotCount = 134 },
+            new() { Name = "David Brown", Department = "Finance", TotalHours = 39.5, ProductivityScore = 74, AttendanceRate = 91, ScreenshotCount = 149 },
+            new() { Name = "Lisa Chen", Department = "IT", TotalHours = 41.0, ProductivityScore = 88, AttendanceRate = 96, ScreenshotCount = 167 }
+        };
+
+        activities = new List<ActivityReportData>();
+        var activityTypes = new[] { "VS Code", "Chrome", "Outlook", "Excel", "Word", "Teams", "Slack" };
+        
+        foreach (var emp in employees)
+        {
+            foreach (var app in activityTypes)
+            {
+                activities.Add(new ActivityReportData
+                {
+                    EmployeeName = emp.Name,
+                    Department = emp.Department,
+                    Activity = app,
+                    Duration = TimeSpan.FromMinutes(random.Next(30, 300)),
+                    ProductivityScore = random.Next(60, 100)
+                });
+            }
+        }
+    }
+
+    private async Task InitializeCharts()
+    {
+        await JSRuntime.InvokeVoidAsync("initializeReportsCharts");
+    }
+
+    private async Task UpdateCharts()
+    {
+        var chartData = GetChartData();
+        await JSRuntime.InvokeVoidAsync("updateReportsCharts", chartData);
+    }
+
+    private void OnFilterChanged()
+    {
+        _ = UpdateCharts();
+        StateHasChanged();
+    }
+
+    private void OnPageSizeChanged()
+    {
+        StateHasChanged();
+    }
+
+    private List<EmployeeReportData> GetFilteredEmployees()
+    {
+        var filtered = employees.AsQueryable();
+
+        if (!string.IsNullOrEmpty(selectedEmployee))
+            filtered = filtered.Where(e => e.Name == selectedEmployee);
+
+        if (!string.IsNullOrEmpty(selectedDepartment))
+            filtered = filtered.Where(e => e.Department == selectedDepartment);
+
+        return filtered.ToList();
+    }
+
+    private IEnumerable<string> GetUniqueEmployees()
+    {
+        return employees.Select(e => e.Name).Distinct().OrderBy(n => n);
+    }
+
+    private string GetChartTitle()
+    {
+        return selectedReportType switch
+        {
+            "productivity" => "Productivity Trends",
+            "attendance" => "Attendance Patterns",
+            "activity" => "Activity Timeline",
+            "applications" => "Application Usage",
+            "websites" => "Website Activity",
+            _ => "Analytics"
+        };
+    }
+
+    private object GetChartData()
+    {
+        var filteredEmployees = GetFilteredEmployees();
+        
+        return selectedReportType switch
+        {
+            "productivity" => new
+            {
+                labels = filteredEmployees.Select(e => e.Name).ToArray(),
+                datasets = new[]
+                {
+                    new
+                    {
+                        label = "Productivity Score",
+                        data = filteredEmployees.Select(e => e.ProductivityScore).ToArray(),
+                        backgroundColor = "rgba(79, 70, 229, 0.8)",
+                        borderColor = "rgba(79, 70, 229, 1)",
+                        borderWidth = 2
+                    }
+                }
+            },
+            "attendance" => new
+            {
+                labels = filteredEmployees.Select(e => e.Name).ToArray(),
+                datasets = new[]
+                {
+                    new
+                    {
+                        label = "Attendance Rate",
+                        data = filteredEmployees.Select(e => e.AttendanceRate).ToArray(),
+                        backgroundColor = "rgba(34, 197, 94, 0.8)",
+                        borderColor = "rgba(34, 197, 94, 1)",
+                        borderWidth = 2
+                    }
+                }
+            },
+            _ => new
+            {
+                labels = filteredEmployees.Select(e => e.Name).ToArray(),
+                datasets = new[]
+                {
+                    new
+                    {
+                        label = "Total Hours",
+                        data = filteredEmployees.Select(e => e.TotalHours).ToArray(),
+                        backgroundColor = "rgba(59, 130, 246, 0.8)",
+                        borderColor = "rgba(59, 130, 246, 1)",
+                        borderWidth = 2
+                    }
+                }
+            }
+        };
+    }
+
+    private IEnumerable<object> GetReportData()
+    {
+        return selectedReportType switch
+        {
+            "productivity" => GetFilteredEmployees().Cast<object>(),
+            "attendance" => GetFilteredEmployees().Cast<object>(),
+            "activity" => activities.Where(a => string.IsNullOrEmpty(selectedEmployee) || a.EmployeeName == selectedEmployee).Cast<object>(),
+            "applications" => activities.GroupBy(a => a.Activity).Select(g => new { Application = g.Key, TotalTime = g.Sum(x => x.Duration.TotalHours), Users = g.Select(x => x.EmployeeName).Distinct().Count() }).Cast<object>(),
+            _ => GetFilteredEmployees().Cast<object>()
+        };
+    }
+
+    private string[] GetTableHeaders()
+    {
+        return selectedReportType switch
+        {
+            "productivity" => new[] { "Employee", "Department", "Total Hours", "Productivity", "Attendance", "Screenshots" },
+            "attendance" => new[] { "Employee", "Department", "Attendance Rate", "Total Hours", "Days Present", "Days Absent" },
+            "activity" => new[] { "Employee", "Department", "Activity", "Duration", "Productivity Score" },
+            "applications" => new[] { "Application", "Total Time (Hours)", "Active Users", "Average Usage" },
+            _ => new[] { "Employee", "Department", "Total Hours", "Productivity" }
+        };
+    }
+
+    private string[] GetTableRow(object item)
+    {
+        return selectedReportType switch
+        {
+            "productivity" when item is EmployeeReportData emp => new[] 
+            { 
+                emp.Name, 
+                emp.Department, 
+                emp.TotalHours.ToString("F1") + "h", 
+                emp.ProductivityScore.ToString("F0") + "%", 
+                emp.AttendanceRate.ToString("F0") + "%", 
+                emp.ScreenshotCount.ToString() 
+            },
+            "attendance" when item is EmployeeReportData emp => new[] 
+            { 
+                emp.Name, 
+                emp.Department, 
+                emp.AttendanceRate.ToString("F0") + "%", 
+                emp.TotalHours.ToString("F1") + "h",
+                Math.Round(emp.AttendanceRate / 20).ToString(), // Rough estimate
+                (5 - Math.Round(emp.AttendanceRate / 20)).ToString()
+            },
+            "activity" when item is ActivityReportData act => new[] 
+            { 
+                act.EmployeeName, 
+                act.Department, 
+                act.Activity, 
+                $"{act.Duration.Hours}h {act.Duration.Minutes}m", 
+                act.ProductivityScore.ToString() + "%" 
+            },
+            _ => new[] { "N/A", "N/A", "N/A", "N/A" }
+        };
+    }
+
+    private async Task GenerateReport()
+    {
+        await LoadReportData();
+        await UpdateCharts();
+        StateHasChanged();
+    }
+
+    private void ExportReport(string format)
+    {
+        Console.WriteLine($"Exporting report as {format}");
+        // Implement export functionality
+    }
+
+    public class EmployeeReportData
+    {
+        public string Name { get; set; } = "";
+        public string Department { get; set; } = "";
+        public double TotalHours { get; set; }
+        public double ProductivityScore { get; set; }
+        public double AttendanceRate { get; set; }
+        public int ScreenshotCount { get; set; }
+    }
+
+    public class ActivityReportData
+    {
+        public string EmployeeName { get; set; } = "";
+        public string Department { get; set; } = "";
+        public string Activity { get; set; } = "";
+        public TimeSpan Duration { get; set; }
+        public int ProductivityScore { get; set; }
+    }
+} 
