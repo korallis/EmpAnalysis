@@ -36,6 +36,37 @@ public class DashboardService
             var topApplications = await GetTopApplicationsDataAsync();
             var recentAlerts = await GetRecentAlertsDataAsync();
             
+            // Fetch analytics from API if available
+            using var httpClient = new HttpClient();
+            var apiUrl = "/api/monitoring/dashboard";
+            var response = await httpClient.GetAsync(apiUrl);
+            if (response.IsSuccessStatusCode)
+            {
+                var json = await response.Content.ReadAsStringAsync();
+                var doc = System.Text.Json.JsonDocument.Parse(json);
+                var root = doc.RootElement;
+                if (root.TryGetProperty("analytics", out var analyticsElem))
+                {
+                    var analytics = System.Text.Json.JsonSerializer.Deserialize<AdvancedAnalyticsResult>(analyticsElem.GetRawText());
+                    return new DashboardData
+                    {
+                        TotalEmployees = totalEmployees,
+                        TotalProductiveHours = productiveHours,
+                        TotalScreenshots = totalScreenshots,
+                        SecurityAlerts = securityAlerts,
+                        ProductivityScore = productivityScore,
+                        NetworkEvents = networkEvents,
+                        OnlineEmployees = employeeStatusCounts.Online,
+                        IdleEmployees = employeeStatusCounts.Idle,
+                        OfflineEmployees = employeeStatusCounts.Offline,
+                        RecentActivities = recentActivities,
+                        TopApplications = topApplications,
+                        RecentAlerts = recentAlerts,
+                        Analytics = analytics
+                    };
+                }
+            }
+            // fallback: return local data
             return new DashboardData
             {
                 TotalEmployees = totalEmployees,
@@ -149,13 +180,13 @@ public class DashboardService
 
         return todayApps
             .GroupBy(a => a.ApplicationName)
-            .Select(g => new ApplicationUsageData
+            .Select(g => new
             {
                 ApplicationName = g.Key,
-                TotalHours = g.Where(a => a.Duration.HasValue).Sum(a => a.Duration!.Value.TotalHours),
+                TotalMinutes = g.Sum(a => a.Duration.HasValue ? a.Duration.Value.TotalMinutes : 0),
                 UsageCount = g.Count()
             })
-            .OrderByDescending(x => x.TotalHours)
+            .OrderByDescending(x => x.TotalMinutes)
             .Take(8)
             .ToList();
     }
@@ -274,7 +305,7 @@ public class DashboardService
             .Select(g => new
             {
                 ApplicationName = g.Key,
-                TotalMinutes = g.Where(a => a.Duration.HasValue).Sum(a => a.Duration.Value.TotalMinutes),
+                TotalMinutes = g.Sum(a => a.Duration.HasValue ? a.Duration.Value.TotalMinutes : 0),
                 UsageCount = g.Count()
             })
             .OrderByDescending(x => x.TotalMinutes)
@@ -364,11 +395,11 @@ public class DashboardService
 
             var productiveMinutes = hourApps
                 .Where(a => a.IsProductiveApplication && a.Duration.HasValue)
-                .Sum(a => a.Duration.Value.TotalMinutes);
+                .Sum(a => a.Duration.HasValue ? a.Duration.Value.TotalMinutes : 0);
 
             var totalMinutes = hourApps
                 .Where(a => a.Duration.HasValue)
-                .Sum(a => a.Duration.Value.TotalMinutes);
+                .Sum(a => a.Duration.HasValue ? a.Duration.Value.TotalMinutes : 0);
 
             hourlyData.Add(new HourlyProductivity
             {
@@ -393,7 +424,7 @@ public class DashboardService
 
         var productiveMinutes = productiveApps
             .Where(a => a.Duration.HasValue)
-            .Sum(a => a.Duration.Value.TotalMinutes);
+            .Sum(a => a.Duration.HasValue ? a.Duration.Value.TotalMinutes : 0);
 
         return (int)(productiveMinutes / 60);
     }
@@ -408,11 +439,11 @@ public class DashboardService
 
         var productiveMinutes = allApps
             .Where(a => a.IsProductiveApplication && a.Duration.HasValue)
-            .Sum(a => a.Duration.Value.TotalMinutes);
+            .Sum(a => a.Duration.HasValue ? a.Duration.Value.TotalMinutes : 0);
 
         var totalMinutes = allApps
             .Where(a => a.Duration.HasValue)
-            .Sum(a => a.Duration.Value.TotalMinutes);
+            .Sum(a => a.Duration.HasValue ? a.Duration.Value.TotalMinutes : 0);
 
         return totalMinutes > 0 ? (int)((productiveMinutes / totalMinutes) * 100) : 0;
     }
@@ -535,6 +566,7 @@ public class DashboardData
     public List<ActivityData> RecentActivities { get; set; } = new();
     public List<ApplicationUsageData> TopApplications { get; set; } = new();
     public List<AlertData> RecentAlerts { get; set; } = new();
+    public AdvancedAnalyticsResult? Analytics { get; set; }
 }
 
 public class ActivityData
@@ -567,4 +599,17 @@ public class EmployeeStatusCounts
     public int Online { get; set; }
     public int Idle { get; set; }
     public int Offline { get; set; }
-} 
+}
+
+public class AdvancedAnalyticsResult
+{
+    public List<AnalyticsData> Data { get; set; } = new();
+    public string Timeframe { get; set; } = string.Empty;
+    public string Unit { get; set; } = string.Empty;
+}
+
+public class AnalyticsData
+{
+    public DateTime Timestamp { get; set; }
+    public double Value { get; set; }
+}

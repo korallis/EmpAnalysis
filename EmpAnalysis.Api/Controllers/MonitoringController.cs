@@ -431,6 +431,31 @@ public class MonitoringController : ControllerBase
                 })
                 .ToListAsync();
 
+            // --- Advanced Analytics ---
+            var sharedAppUsages = todayApps; // Already in shared model
+            var sharedWebVisits = await _context.WebsiteVisits.Where(w => w.VisitStart >= today).ToListAsync();
+            var systemEvents = await _context.ActivityLogs
+                .Where(a => a.Timestamp >= today && (a.ActivityType == ActivityType.UsbDevice || a.ActivityType == ActivityType.SystemEvent))
+                .Select(a => new SystemEvent
+                {
+                    EventType = a.ActivityType == ActivityType.UsbDevice ? EmpAnalysis.Shared.Models.SystemEventType.USBInsert : EmpAnalysis.Shared.Models.SystemEventType.Unknown,
+                    Timestamp = a.Timestamp,
+                    Description = a.Description
+                })
+                .ToListAsync();
+            var analyticsService = new AdvancedAnalyticsService();
+            var riskScore = analyticsService.CalculateRiskScore(sharedAppUsages, sharedWebVisits, systemEvents);
+            var anomalies = analyticsService.DetectAnomalies(sharedAppUsages, sharedWebVisits, systemEvents);
+            var trends = analyticsService.AnalyzeTrends(sharedAppUsages, TimeSpan.FromDays(1))
+                .Select(t => new TrendPoint { Period = t.Period, ProductivityScore = t.ProductivityScore }).ToList();
+            var analyticsResult = new AdvancedAnalyticsResult
+            {
+                RiskScore = riskScore,
+                Anomalies = anomalies,
+                Trends = trends
+            };
+            // --- End Advanced Analytics ---
+
             var dashboardData = new
             {
                 totalEmployees,
@@ -445,6 +470,7 @@ public class MonitoringController : ControllerBase
                 recentActivities,
                 topApplications,
                 recentAlerts,
+                analytics = analyticsResult,
                 lastUpdated = DateTime.UtcNow
             };
 
@@ -514,7 +540,7 @@ public class WebsiteVisitDto
 {
     public string Url { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
-    public string Domain { get; set; } = string.Empty;
+    public string Domain { get; } = string.Empty;
     public DateTime StartTime { get; set; }
     public DateTime EndTime { get; set; }
     public TimeSpan? Duration { get; set; }
@@ -565,20 +591,3 @@ public class SystemEventsSubmissionDto
     public DateTime Timestamp { get; set; }
     public List<SystemEventDto> Events { get; set; } = new();
 }
-
-public enum SystemEventType
-{
-    Login,
-    Logout,
-    Lock,
-    Unlock,
-    Idle,
-    Active,
-    ApplicationStart,
-    ApplicationEnd,
-    FileAccess,
-    NetworkActivity,
-    USBInsert,
-    USBRemove,
-    PrintJob
-} 
