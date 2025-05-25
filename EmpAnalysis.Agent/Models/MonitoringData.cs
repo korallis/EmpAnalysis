@@ -106,3 +106,23 @@ public enum WebsiteCategory
     Blocked,
     Unknown
 }
+
+public class AttendanceEvent
+{
+    public string EmployeeId { get; set; } = string.Empty;
+    public DateTime Timestamp { get; set; }
+    public AttendanceEventType EventType { get; set; }
+    public string? Notes { get; set; }
+}
+
+public enum AttendanceEventType
+{
+    BreakStart,
+    BreakEnd,
+    LunchStart,
+    LunchEnd,
+    MeetingStart,
+    MeetingEnd,
+    OvertimeStart,
+    OvertimeEnd
+}

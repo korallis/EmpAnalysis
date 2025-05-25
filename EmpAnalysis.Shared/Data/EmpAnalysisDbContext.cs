@@ -16,6 +16,7 @@ public class EmpAnalysisDbContext : IdentityDbContext<Employee>
     public DbSet<WebsiteVisit> WebsiteVisits { get; set; }
     public DbSet<ApplicationUsage> ApplicationUsages { get; set; }
     public DbSet<FileAccessLog> FileAccesses { get; set; }
+    public DbSet<AttendanceLog> AttendanceLogs { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -103,5 +104,16 @@ public class EmpAnalysisDbContext : IdentityDbContext<Employee>
                   .HasForeignKey(e => e.EmployeeId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
+
+        // Configure AttendanceLog
+        builder.Entity<AttendanceLog>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.EmployeeId, e.Timestamp });
+            entity.HasIndex(e => e.Timestamp);
+            entity.Property(e => e.EventType).IsRequired();
+            entity.Property(e => e.EmployeeId).IsRequired();
+            // No direct navigation to Employee, but can be added if needed
+        });
     }
-} 
+}

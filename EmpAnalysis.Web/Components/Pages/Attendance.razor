@@ -1,0 +1,49 @@
+@page "/attendance"
+@using EmpAnalysis.Shared.Models
+@inject HttpClient Http
+
+<PageTitle>Attendance & Break Logs</PageTitle>
+
+<h3>Attendance & Break Logs</h3>
+
+@if (attendanceLogs == null)
+{
+    <p>Loading...</p>
+}
+else if (!attendanceLogs.Any())
+{
+    <p>No attendance or break events found.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Date/Time</th>
+                <th>Event</th>
+                <th>Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var log in attendanceLogs.OrderByDescending(l => l.Timestamp))
+            {
+                <tr>
+                    <td>@log.Timestamp.ToLocalTime().ToString("g")</td>
+                    <td>@log.EventType</td>
+                    <td>@log.Notes</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<AttendanceLog>? attendanceLogs;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // TODO: Replace with actual employee ID from auth context
+        var employeeId = "testuser";
+        attendanceLogs = await Http.GetFromJsonAsync<List<AttendanceLog>>($"api/attendance/employee/{employeeId}");
+    }
+}

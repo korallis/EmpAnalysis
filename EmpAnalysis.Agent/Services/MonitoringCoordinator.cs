@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Runtime.InteropServices;
 using System.Text;
-using EmpAnalysis.Agent.Services; // Add this for AdvancedAnalyticsService
+using EmpAnalysis.Agent.Services;
 using SharedAppUsage = EmpAnalysis.Shared.Models.ApplicationUsage;
 using SharedWebsiteVisit = EmpAnalysis.Shared.Models.WebsiteVisit;
 using SharedSystemEvent = EmpAnalysis.Agent.Models.SystemEvent;
@@ -19,6 +19,7 @@ public class MonitoringCoordinator : BackgroundService
     private readonly IActivityMonitoringService _activityService;
     private readonly IScreenshotService _screenshotService;
     private readonly IApiCommunicationService _apiService;
+    private readonly IAttendanceService _attendanceService;
 
     private readonly AdvancedAnalyticsService _analyticsService = new();
 
@@ -55,13 +56,15 @@ public class MonitoringCoordinator : BackgroundService
         IOptions<AgentSettings> settings,
         IActivityMonitoringService activityService,
         IScreenshotService screenshotService,
-        IApiCommunicationService apiService)
+        IApiCommunicationService apiService,
+        IAttendanceService attendanceService)
     {
         _logger = logger;
         _settings = settings.Value;
         _activityService = activityService;
         _screenshotService = screenshotService;
         _apiService = apiService;
+        _attendanceService = attendanceService;
 
         // Subscribe to activity events
         _activityService.ApplicationChanged += OnApplicationChanged;
@@ -79,7 +82,8 @@ public class MonitoringCoordinator : BackgroundService
             SynchronizeDataAsync(stoppingToken),
             MonitorHeartbeatAsync(stoppingToken),
             MonitorWindowTitlesAsync(stoppingToken), // New: Window title monitoring
-            MonitorIdleTimeAsync(stoppingToken)      // New: Idle time detection
+            MonitorIdleTimeAsync(stoppingToken),      // New: Idle time detection
+            MonitorAttendanceAsync(stoppingToken) // Add attendance monitoring
         );
     }
 
@@ -669,5 +673,27 @@ public class MonitoringCoordinator : BackgroundService
     {
         // SystemEvent is the same in Agent and AdvancedAnalyticsService context, so just return as-is
         return agentEvents;
+    }
+
+    // Example: Detect break/attendance events (stub)
+    private async Task MonitorAttendanceAsync(CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Starting attendance/break monitoring...");
+        var employeeId = _settings.EmployeeSettings.AutoDetectUser ? Environment.UserName : _settings.EmployeeSettings.EmployeeId;
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            // TODO: Replace with real detection logic
+            // Simulate clock-in at 9:00 AM, clock-out at 5:00 PM
+            var now = DateTime.Now;
+            if (now.Hour == 9 && now.Minute == 0)
+            {
+                await _attendanceService.LogAttendanceAsync(employeeId, EmpAnalysis.Shared.Models.AttendanceEventType.ClockIn, "Auto clock-in");
+            }
+            if (now.Hour == 17 && now.Minute == 0)
+            {
+                await _attendanceService.LogAttendanceAsync(employeeId, EmpAnalysis.Shared.Models.AttendanceEventType.ClockOut, "Auto clock-out");
+            }
+            await Task.Delay(TimeSpan.FromMinutes(1), cancellationToken);
+        }
     }
 }

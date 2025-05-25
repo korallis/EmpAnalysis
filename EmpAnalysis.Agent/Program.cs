@@ -44,6 +44,7 @@ static class Program
             builder.Services.AddSingleton<IScreenshotService, ScreenshotService>();
             builder.Services.AddSingleton<IActivityMonitoringService, ActivityMonitoringService>();
             builder.Services.AddSingleton<IProductivityAnalyzer, ProductivityAnalyzer>();
+            builder.Services.AddHttpClient<IAttendanceService, AttendanceService>();
             
             // Register the main coordinator as a hosted service
             builder.Services.AddHostedService<MonitoringCoordinator>();

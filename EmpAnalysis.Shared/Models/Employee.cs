@@ -35,7 +35,8 @@ public class Employee : IdentityUser
     public virtual ICollection<WebsiteVisit> WebsiteVisits { get; set; } = new List<WebsiteVisit>();
     public virtual ICollection<ApplicationUsage> ApplicationUsages { get; set; } = new List<ApplicationUsage>();
     public virtual ICollection<FileAccessLog> FileAccesses { get; set; } = new List<FileAccessLog>();
+    public virtual ICollection<AttendanceLog> AttendanceLogs { get; set; } = new List<AttendanceLog>();
 
     // Computed properties
     public string FullName => $"{FirstName} {LastName}";
-} 
+}
