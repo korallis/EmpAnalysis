@@ -34,15 +34,15 @@ EmpAnalysis is a modern, enterprise-grade employee monitoring system for Windows
 - [x] Professional UI/UX, Chart.js analytics
 
 ### In Progress / To Do
-- [ ] Break/attendance tracking
-- [ ] Multi-monitor support
-- [ ] Blocked/social/search web monitoring
-- [ ] File transfer/cloud storage monitoring
-- [ ] Communication monitoring (email, IM, video)
-- [ ] DLP, compliance, policy violation alerts
-- [ ] Custom report builder, export (PDF/Excel)
-- [ ] Multi-tenant, advanced permissions, audit logs
-- [ ] Agent remote config, updates, tamper/stealth
+- [x] Break/attendance tracking
+- [x] Multi-monitor support
+- [x] Blocked/social/search web monitoring
+- [x] File transfer/cloud storage monitoring
+- [x] Communication monitoring (email, IM, video)
+- [x] DLP, compliance, policy violation alerts
+- [x] Custom report builder, export (PDF/Excel)
+- [x] Multi-tenant, advanced permissions, audit logs
+- [x] Agent remote config, updates, tamper/stealth
 
 ---
 
