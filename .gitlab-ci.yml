@@ -1,0 +1,26 @@
+stages:
+  - build
+  - test
+  - deploy
+
+build:
+  stage: build
+  script:
+    - dotnet build EmpAnalysis.sln --configuration Release
+  tags:
+    - windows
+
+test:
+  stage: test
+  script:
+    - dotnet test EmpAnalysis.sln
+  tags:
+    - windows
+
+deploy:
+  stage: deploy
+  script:
+    - echo "Manual deploy step. Configure as needed."
+  when: manual
+  tags:
+    - windows
